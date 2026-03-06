@@ -382,4 +382,3 @@ rm debug_sessions.db
 
 ---
 
-**Built with ❤️ using OpenAI Agents SDK**
