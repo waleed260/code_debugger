@@ -378,8 +378,7 @@ rm debug_sessions.db
 ## 📚 Additional Resources
 
 - [Example Usage](example_usage.py)
-- [Test Files](test_agents.py, test_openai_agents.py)
 
 ---
 
-**Built with ❤️ using OpenAI Agents SDK**
+
