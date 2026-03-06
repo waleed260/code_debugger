@@ -1,9 +1,9 @@
 # Code Debugger - Multi-Agent Debugging System
 
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
-[![OpenAI Agents SDK](https://img.shields.io/badge/OpenAI-Agents%20SDK-green.svg)](https://github.com/openai/openai-agents-python)
 
-A sophisticated AI-powered debugging assistant that uses **three specialized agents** to analyze errors, generate fixes, and validate solutions. Built with the **OpenAI Agents SDK**.
+
+A sophisticated AI-powered debugging assistant that uses **three specialized agents** to analyze errors, generate fixes, and validate solutions.
 
 ---
 
@@ -377,7 +377,6 @@ rm debug_sessions.db
 
 ## 📚 Additional Resources
 
-- [OpenAI Agents SDK Documentation](https://github.com/openai/openai-agents-python)
 - [Example Usage](example_usage.py)
 - [Test Files](test_agents.py, test_openai_agents.py)
 
