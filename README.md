@@ -53,10 +53,7 @@ Agents have access to these powerful tools:
 
 ## 📦 Installation
 
-### Prerequisites
 
-- Python 3.12 or higher
-- OpenAI API key
 
 ### Quick Install
 
