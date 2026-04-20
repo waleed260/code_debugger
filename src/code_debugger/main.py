@@ -19,14 +19,14 @@ def run_sample_debugging_session():
 
     # Sample error context - this would normally come from an actual error
     sample_error_context = {
-        'error_trace': '''Traceback (most recent call last):
+        "error_trace": """Traceback (most recent call last):
   File "example.py", line 15, in calculate_sum
     result = numbers[index] + numbers[index + 1]
-IndexError: list index out of range''',
-        'failing_file': 'example.py',
-        'failing_line': 15,
-        'inputs': {'numbers': [1, 2, 3], 'index': 2},
-        'codebase_path': '.'
+IndexError: list index out of range""",
+        "failing_file": "example.py",
+        "failing_line": 15,
+        "inputs": {"numbers": [1, 2, 3], "index": 2},
+        "codebase_path": ".",
     }
 
     # Run the full debugging cycle
@@ -36,8 +36,8 @@ IndexError: list index out of range''',
     print("\n" + "=" * 60)
     print("📋 Final Debugging Report:")
     print("=" * 60)
-    print(result['final_report'])
-    
+    print(result["final_report"])
+
     # Print validation status
     print("\n" + "=" * 60)
     print("✅ Validation Status:")
@@ -56,14 +56,16 @@ async def run_sample_debugging_session_async():
     orchestrator = DebuggingOrchestrator()
 
     sample_error_context = {
-        'error_trace': '''Traceback (most recent call last):
+        "error_trace": """Traceback (most recent call last):
   File "example.py", line 15, in calculate_sum
     result = numbers[index] + numbers[index + 1]
-IndexError: list index out of range''',
-        'failing_file': 'example.py',
-        'failing_line': 15,
-        'inputs': {'numbers': [1, 2, 3], 'index': 2},
-        'codebase_path': '.'
+IndexError: list index out of range""",
+        "failing_file": "example.py",
+        "failing_line": 15,
+        # from datetime import datetime
+        # from pathlib import Path
+        "inputs": {"numbers": [1, 2, 3], "index": 2},
+        "codebase_path": ".",
     }
 
     result = await orchestrator.run_full_debugging_cycle(sample_error_context)
@@ -71,8 +73,8 @@ IndexError: list index out of range''',
     print("\n" + "=" * 60)
     print("📋 Final Debugging Report:")
     print("=" * 60)
-    print(result['final_report'])
-    
+    print(result["final_report"])
+
     print("\n" + "=" * 60)
     print("✅ Validation Status:")
     print("=" * 60)
@@ -88,7 +90,7 @@ def main():
     print("  Powered by OpenAI Agents SDK")
     print("=" * 60)
     print()
-    
+
     run_sample_debugging_session()
 
 
