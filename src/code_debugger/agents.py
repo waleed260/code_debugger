@@ -11,6 +11,7 @@ Features:
 - OpenAI Agents SDK integration
 - Tool execution tracking
 - Conversation history storage
+- Gemini model support
 """
 
 from typing import Dict, Any, Optional, List
@@ -23,9 +24,19 @@ from .tools import (
     analyze_python_code
 )
 from .session_manager import SessionManager
+import os
 import json
 import time
 import uuid
+import google.genai as genai
+
+GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', 'AIzaSyBgSpaU-oICNVMOtHmexiBNX4OVh_d3tG8')
+GEMINI_BASE_URL = os.environ.get('GEMINI_BASE_URL', 'https://generativelanguage.googleapis.com/v1beta/openai/')
+GEMINI_MODEL = os.environ.get('GEMINI_MODEL', 'gemini-2.0-flash')
+
+def get_gemini_client():
+    """Get configured Gemini client."""
+    return genai.Client(api_key=GEMINI_API_KEY)
 
 
 # =============================================================================
@@ -104,7 +115,7 @@ DebugSleuth = Agent(
         run_shell_command_tool,
         analyze_python_code_tool
     ],
-    model="gpt-4o"
+    model="gemini-2.0-flash"
 )
 
 
@@ -147,7 +158,7 @@ SolutionArchitect = Agent(
         run_shell_command_tool,
         analyze_python_code_tool
     ],
-    model="gpt-4o"
+    model="gemini-2.0-flash"
 )
 
 
@@ -215,7 +226,7 @@ ReliabilityEngineer = Agent(
         run_shell_command_tool,
         analyze_python_code_tool
     ],
-    model="gpt-4o"
+    model="gemini-2.0-flash"
 )
 
 
@@ -250,9 +261,11 @@ class DebuggingOrchestrator:
     1. Debug Sleuth → Solution Architect → Reliability Engineer
     """
     
-    def __init__(self, model: str = "gpt-4o"):
+    def __init__(self, model: str = "gpt-4o", db_path: str = "debug_sessions.db"):
         self.model = model
+        self.db_path = db_path
         self.session_history: List[Dict[str, Any]] = []
+        self.session_manager = SessionManager(db_path)
         
     async def run_debug_sleuth(self, error_context: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -434,11 +447,37 @@ import asyncio
 def run_async(coro):
     """Helper to run async functions in synchronous context."""
     try:
+        # Try to get the current event loop
         loop = asyncio.get_event_loop()
+        if loop.is_running():
+            # If loop is already running, we need to create a new thread
+            # or use asyncio.run_coroutine_threadsafe, but for simplicity,
+            # we'll create a new event loop in a separate thread
+            import concurrent.futures
+            import threading
+            
+            def run_in_new_loop():
+                new_loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(new_loop)
+                try:
+                    return new_loop.run_until_complete(coro)
+                finally:
+                    new_loop.close()
+            
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                future = executor.submit(run_in_new_loop)
+                return future.result()
+        else:
+            # Loop exists but is not running, safe to use run_until_complete
+            return loop.run_until_complete(coro)
     except RuntimeError:
+        # No event loop exists, create a new one
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-    return loop.run_until_complete(coro)
+        try:
+            return loop.run_until_complete(coro)
+        finally:
+            loop.close()
 
 
 class SyncDebuggingOrchestrator(DebuggingOrchestrator):
