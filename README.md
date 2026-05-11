@@ -26,13 +26,43 @@ Each agent has specific responsibilities and access to powerful tools for code a
 
 ## ✨ Features
 
-### Three Specialized Agents
+### Advanced Multi-Agent System
 
-| Agent | Role | Responsibilities |
+**Three Elite AI Agents** work together to provide production-grade debugging:
+
+#### 🔍 Debug Sleuth - Elite Detective
+- **Forensic Analysis**: Deep stack trace investigation with full call path tracing
+- **Extended Context**: Reads 20-30 lines around failures, entire functions/classes
+- **Dependency Tracking**: Analyzes imports, circular dependencies, version conflicts
+- **Data Flow Tracing**: Tracks variable origins and transformations
+- **Pattern Recognition**: Searches for similar issues across the entire codebase
+- **Concurrency Detection**: Identifies race conditions, deadlocks, timing issues
+- **Multiple Hypotheses**: Provides ranked hypotheses with confidence levels
+
+#### 🔧 Solution Architect - Principal Engineer
+- **Multiple Solutions**: Offers Quick Fix, Robust Fix, and Ideal Fix options
+- **SOLID Principles**: Applies industry best practices (Single Responsibility, Open/Closed, etc.)
+- **Defensive Programming**: Input validation, edge case handling, meaningful errors
+- **Performance Analysis**: Evaluates time/space complexity impact
+- **Comprehensive Testing**: Generates unit tests, integration tests, and regression tests
+- **Backward Compatibility**: Ensures fixes don't break existing code
+- **Security First**: Validates against injection attacks, data exposure, auth issues
+
+#### ✅ Reliability Engineer - Staff SRE
+- **Code Quality**: Detects 10+ code smell patterns (long methods, deep nesting, etc.)
+- **Security Audit**: Comprehensive checks for SQL injection, XSS, command injection, etc.
+- **Performance Review**: Analyzes complexity, bottlenecks, scalability (10x/100x/1000x)
+- **Test Validation**: Scores test quality and coverage
+- **Operational Readiness**: Validates logging, monitoring, error tracking
+- **Compliance**: Checks GDPR, PCI DSS, HIPAA requirements
+- **Quality Metrics**: 5-category scoring system (0-100 scale)
+- **Pass/Fail Decision**: Strict validation with actionable feedback
+
+| Agent | Role | Key Capabilities |
 |-------|------|------------------|
-| **Debug Sleuth** | Root Cause Analysis | Stack trace analysis, code context examination, variable state deduction, confidence-rated hypotheses |
-| **Solution Architect** | Fix Generation | Clean idiomatic fixes (DRY/SOLID), defensive programming, pytest test snippets, implementation plans |
-| **Reliability Engineer** | Validation | Code smell detection, complexity analysis, security review, comprehensive markdown reports |
+| **Debug Sleuth** | Root Cause Analysis | • Deep forensic stack trace analysis<br>• Extended code context (20-30 lines)<br>• Dependency & import analysis<br>• Data flow tracing<br>• Pattern recognition across codebase<br>• Concurrency issue detection<br>• Multiple hypotheses with confidence levels |
+| **Solution Architect** | Fix Generation | • Multiple solution approaches (Quick/Robust/Ideal)<br>• SOLID principles application<br>• Advanced error handling strategies<br>• Performance impact analysis<br>• Comprehensive test suite (unit + integration)<br>• Backward compatibility checks<br>• Security-first design |
+| **Reliability Engineer** | Validation | • 10+ code smell patterns detection<br>• Comprehensive security audit (SQL injection, XSS, etc.)<br>• Performance & scalability analysis<br>• Test coverage validation<br>• Operational readiness (logging, monitoring)<br>• Compliance verification (GDPR, PCI DSS)<br>• Quality metrics (5 categories, 0-100 scale) |
 
 ### Built-in Tools
 
