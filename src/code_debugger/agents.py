@@ -210,7 +210,7 @@ DebugSleuth = Agent(
         run_shell_command_tool,
         analyze_python_code_tool
     ],
-    model="gpt-3.5-turbo"
+    model="google/gemini-2.0-flash-exp:free"
 )
 
 
@@ -428,7 +428,7 @@ SolutionArchitect = Agent(
         run_shell_command_tool,
         analyze_python_code_tool
     ],
-    model="gpt-3.5-turbo"
+    model="google/gemini-2.0-flash-exp:free"
 )
 
 
@@ -770,7 +770,7 @@ ReliabilityEngineer = Agent(
         run_shell_command_tool,
         analyze_python_code_tool
     ],
-    model="gpt-3.5-turbo"
+    model="google/gemini-2.0-flash-exp:free"
 )
 
 

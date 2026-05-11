@@ -285,7 +285,7 @@ InfrastructureAnalyzer = Agent(
         check_docker_containers,
         check_network_connections
     ],
-    model=OPENROUTER_MODEL
+    model="google/gemini-2.0-flash-exp:free"
 )
 
 
@@ -379,7 +379,7 @@ SecurityAuditor = Agent(
         analyze_logs,
         check_network_connections
     ],
-    model=OPENROUTER_MODEL
+    model="google/gemini-2.0-flash-exp:free"
 )
 
 
@@ -476,7 +476,7 @@ PerformanceOptimizer = Agent(
         check_docker_containers,
         check_network_connections
     ],
-    model=OPENROUTER_MODEL
+    model="google/gemini-2.0-flash-exp:free"
 )
 
 
@@ -577,7 +577,7 @@ CostManager = Agent(
         check_running_processes,
         check_docker_containers
     ],
-    model=OPENROUTER_MODEL
+    model="google/gemini-2.0-flash-exp:free"
 )
 
 
@@ -682,5 +682,5 @@ IncidentResponder = Agent(
         analyze_logs,
         check_network_connections
     ],
-    model=OPENROUTER_MODEL
+    model="google/gemini-2.0-flash-exp:free"
 )
