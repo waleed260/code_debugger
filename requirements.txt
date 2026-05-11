@@ -4,3 +4,4 @@ openai>=1.0.0
 openai-agents>=0.1.0
 python-dotenv>=1.0.0
 pylint>=3.0.0
+psutil>=5.9.0

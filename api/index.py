@@ -5,9 +5,10 @@ import sys
 from pathlib import Path
 
 # Add src to path
-sys.path.insert(0, str(Path(__file__).parent / "src"))
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from code_debugger import SyncDebuggingOrchestrator
+from code_debugger.infra_orchestrator import SyncInfrastructureOrchestrator
 
 app = Flask(__name__)
 CORS(app)
@@ -16,35 +17,45 @@ CORS(app)
 def home():
     """Home endpoint with API documentation."""
     return jsonify({
-        "name": "Code Debugger API",
+        "name": "Code Debugger & Infrastructure Management API",
         "version": "2.0",
-        "description": "Multi-agent debugging system with enterprise-grade analysis",
+        "description": "Multi-agent system for debugging and infrastructure management",
         "endpoints": {
             "/": "API documentation",
             "/health": "Health check",
             "/debug": "POST - Debug an error",
-            "/api/debug": "POST - Debug an error (alias)"
+            "/api/debug": "POST - Debug an error (alias)",
+            "/api/agents": "GET - Get debugging agents info",
+            "/api/infrastructure/<agent>": "POST - Run infrastructure agent",
+            "/api/infrastructure/full-audit": "POST - Run full infrastructure audit",
+            "/api/infrastructure/incident": "POST - Respond to incident",
+            "/infrastructure": "GET - Infrastructure management UI"
         },
-        "agents": [
+        "debugging_agents": [
             "Debug Sleuth - Root Cause Analysis",
             "Solution Architect - Fix Generation",
             "Reliability Engineer - Validation"
         ],
-        "features": [
-            "10x deeper analysis",
-            "Multiple solution approaches",
-            "Comprehensive security audits",
-            "Production-ready validation",
-            "Quality scoring (0-100)"
+        "infrastructure_agents": [
+            "Infrastructure Analyzer - System Health",
+            "Security Auditor - Security & Compliance",
+            "Performance Optimizer - Performance Tuning",
+            "Cost Manager - Cost Optimization",
+            "Incident Responder - Incident Management"
         ]
     })
+
+@app.route('/infrastructure')
+def infrastructure_ui():
+    """Infrastructure management UI."""
+    return app.send_static_file('infrastructure.html')
 
 @app.route('/health')
 def health():
     """Health check endpoint."""
     return jsonify({
         "status": "healthy",
-        "service": "code-debugger",
+        "service": "code-debugger-infrastructure",
         "version": "2.0"
     })
 
@@ -118,7 +129,7 @@ def debug_error():
 def get_agents():
     """Get information about available agents."""
     return jsonify({
-        "agents": [
+        "debugging_agents": [
             {
                 "name": "Debug Sleuth",
                 "role": "Root Cause Analysis",
@@ -156,8 +167,145 @@ def get_agents():
                     "Pass/fail with feedback"
                 ]
             }
+        ],
+        "infrastructure_agents": [
+            {
+                "name": "Infrastructure Analyzer",
+                "role": "System Health & Architecture",
+                "capabilities": [
+                    "Resource monitoring (CPU, Memory, Disk, Network)",
+                    "Container health checks",
+                    "Network analysis",
+                    "Capacity planning",
+                    "Architecture review"
+                ]
+            },
+            {
+                "name": "Security Auditor",
+                "role": "Security & Compliance",
+                "capabilities": [
+                    "Port scanning",
+                    "SSL/TLS certificate checks",
+                    "Vulnerability assessment",
+                    "Compliance auditing (PCI DSS, GDPR, HIPAA)",
+                    "Security scoring"
+                ]
+            },
+            {
+                "name": "Performance Optimizer",
+                "role": "Performance Tuning",
+                "capabilities": [
+                    "Bottleneck detection",
+                    "Resource optimization",
+                    "Performance analysis",
+                    "Load balancing review",
+                    "Optimization recommendations"
+                ]
+            },
+            {
+                "name": "Cost Manager",
+                "role": "Cost Optimization",
+                "capabilities": [
+                    "Cost breakdown analysis",
+                    "Waste identification",
+                    "Savings recommendations",
+                    "ROI analysis",
+                    "Budget management"
+                ]
+            },
+            {
+                "name": "Incident Responder",
+                "role": "Incident Management",
+                "capabilities": [
+                    "Proactive monitoring",
+                    "Anomaly detection",
+                    "Root cause analysis",
+                    "Mitigation steps",
+                    "Prevention measures"
+                ]
+            }
         ]
     })
+
+@app.route('/api/infrastructure/<agent_type>', methods=['POST'])
+def run_infrastructure_agent(agent_type):
+    """Run a specific infrastructure agent."""
+    try:
+        orchestrator = SyncInfrastructureOrchestrator()
+
+        if agent_type == 'infrastructure':
+            result = orchestrator.run_infrastructure_analysis()
+        elif agent_type == 'security':
+            result = orchestrator.run_security_audit()
+        elif agent_type == 'performance':
+            result = orchestrator.run_performance_optimization()
+        elif agent_type == 'cost':
+            result = orchestrator.run_cost_analysis()
+        elif agent_type == 'incident':
+            result = orchestrator.run_incident_response()
+        else:
+            return jsonify({
+                "success": False,
+                "error": f"Unknown agent type: {agent_type}"
+            }), 400
+
+        return jsonify({
+            "success": True,
+            "result": result
+        })
+
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e),
+            "type": type(e).__name__
+        }), 500
+
+@app.route('/api/infrastructure/full-audit', methods=['POST'])
+def run_full_infrastructure_audit():
+    """Run complete infrastructure audit with all agents."""
+    try:
+        orchestrator = SyncInfrastructureOrchestrator()
+        result = orchestrator.run_full_infrastructure_audit()
+
+        return jsonify({
+            "success": True,
+            "result": result
+        })
+
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e),
+            "type": type(e).__name__
+        }), 500
+
+@app.route('/api/infrastructure/incident', methods=['POST'])
+def respond_to_incident():
+    """Respond to a specific incident."""
+    try:
+        data = request.get_json()
+
+        if not data or 'description' not in data:
+            return jsonify({
+                "success": False,
+                "error": "Missing incident description"
+            }), 400
+
+        orchestrator = SyncInfrastructureOrchestrator()
+        result = orchestrator.run_incident_response(data['description'])
+
+        return jsonify({
+            "success": True,
+            "result": result
+        })
+
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e),
+            "type": type(e).__name__
+        }), 500
 
 # For Vercel serverless functions
 def handler(request):
