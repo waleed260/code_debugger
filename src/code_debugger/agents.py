@@ -28,15 +28,27 @@ import os
 import json
 import time
 import uuid
-import google.genai as genai
+from openai import OpenAI
+from dotenv import load_dotenv
 
-GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', 'AIzaSyBgSpaU-oICNVMOtHmexiBNX4OVh_d3tG8')
-GEMINI_BASE_URL = os.environ.get('GEMINI_BASE_URL', 'https://generativelanguage.googleapis.com/v1beta/openai/')
-GEMINI_MODEL = os.environ.get('GEMINI_MODEL', 'gemini-2.0-flash')
+# Load environment variables
+load_dotenv()
 
-def get_gemini_client():
-    """Get configured Gemini client."""
-    return genai.Client(api_key=GEMINI_API_KEY)
+# OpenRouter Configuration
+OPENROUTER_API_KEY = os.environ.get('OPENROUTER_API_KEY', 'your-openrouter-api-key-here')
+OPENROUTER_BASE_URL = os.environ.get('OPENROUTER_BASE_URL', 'https://openrouter.ai/api/v1')
+OPENROUTER_MODEL = os.environ.get('OPENROUTER_MODEL', 'google/gemini-2.0-flash-exp:free')
+
+# Set OpenAI environment variables for OpenRouter
+os.environ['OPENAI_API_KEY'] = OPENROUTER_API_KEY
+os.environ['OPENAI_BASE_URL'] = OPENROUTER_BASE_URL
+
+def get_openrouter_client():
+    """Get configured OpenRouter client."""
+    return OpenAI(
+        api_key=OPENROUTER_API_KEY,
+        base_url=OPENROUTER_BASE_URL
+    )
 
 
 # =============================================================================
@@ -115,7 +127,7 @@ DebugSleuth = Agent(
         run_shell_command_tool,
         analyze_python_code_tool
     ],
-    model="gemini-2.0-flash"
+    model="gpt-3.5-turbo"
 )
 
 
@@ -158,7 +170,7 @@ SolutionArchitect = Agent(
         run_shell_command_tool,
         analyze_python_code_tool
     ],
-    model="gemini-2.0-flash"
+    model="gpt-3.5-turbo"
 )
 
 
@@ -226,7 +238,7 @@ ReliabilityEngineer = Agent(
         run_shell_command_tool,
         analyze_python_code_tool
     ],
-    model="gemini-2.0-flash"
+    model="gpt-3.5-turbo"
 )
 
 
@@ -482,15 +494,70 @@ def run_async(coro):
 
 class SyncDebuggingOrchestrator(DebuggingOrchestrator):
     """Synchronous wrapper for the DebuggingOrchestrator."""
-    
+
     def run_debug_sleuth(self, error_context: Dict[str, Any]) -> Dict[str, Any]:
-        return run_async(super().run_debug_sleuth(error_context))
-    
+        """Synchronous version of run_debug_sleuth."""
+        async def _run():
+            prompt = self._build_sleuth_prompt(error_context)
+            result = await Runner.run(DebugSleuth, prompt)
+            analysis = {
+                'agent': 'DebugSleuth',
+                'final_output': result.final_output,
+                'input': error_context
+            }
+            self.session_history.append(analysis)
+            return analysis
+        return run_async(_run())
+
     def run_solution_architect(self, bug_report: str) -> Dict[str, Any]:
-        return run_async(super().run_solution_architect(bug_report))
-    
+        """Synchronous version of run_solution_architect."""
+        async def _run():
+            prompt = self._build_architect_prompt(bug_report)
+            result = await Runner.run(SolutionArchitect, prompt)
+            fix_proposal = {
+                'agent': 'SolutionArchitect',
+                'final_output': result.final_output,
+                'input': bug_report
+            }
+            self.session_history.append(fix_proposal)
+            return fix_proposal
+        return run_async(_run())
+
     def run_reliability_engineer(self, fix_proposal: str, bug_report: str) -> Dict[str, Any]:
-        return run_async(super().run_reliability_engineer(fix_proposal, bug_report))
-    
+        """Synchronous version of run_reliability_engineer."""
+        async def _run():
+            prompt = self._build_validator_prompt(fix_proposal, bug_report)
+            result = await Runner.run(ReliabilityEngineer, prompt)
+            validation = {
+                'agent': 'ReliabilityEngineer',
+                'final_output': result.final_output,
+                'validation_passed': 'PASS' in result.final_output.upper() or 'VALIDATION STATUS: PASS' in result.final_output.upper()
+            }
+            self.session_history.append(validation)
+            return validation
+        return run_async(_run())
+
     def run_full_debugging_cycle(self, error_context: Dict[str, Any]) -> Dict[str, Any]:
-        return run_async(super().run_full_debugging_cycle(error_context))
+        """Synchronous version of run_full_debugging_cycle."""
+        print("🔍 Debug Sleuth: Performing root cause analysis...")
+        sleuth_result = self.run_debug_sleuth(error_context)
+
+        print("🔧 Solution Architect: Creating a fix...")
+        architect_result = self.run_solution_architect(sleuth_result['final_output'])
+
+        print("✅ Reliability Engineer: Validating the fix...")
+        validator_result = self.run_reliability_engineer(
+            architect_result['final_output'],
+            sleuth_result['final_output']
+        )
+
+        print("🎉 Debugging cycle completed!")
+
+        return {
+            'session_history': self.session_history,
+            'root_cause_analysis': sleuth_result,
+            'solution_architecture': architect_result,
+            'reliability_validation': validator_result,
+            'final_report': validator_result['final_output'],
+            'validation_passed': validator_result['validation_passed']
+        }

@@ -7,6 +7,33 @@ wheels/
 *.egg-info
 
 # Virtual environments
+.venv/
+venv/
+ENV/
 
-.env.example
+# Environment variables and secrets - DO NOT COMMIT
+.env
+.env.local
+*.key
+*.pem
 
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Ruff cache
+.ruff_cache/

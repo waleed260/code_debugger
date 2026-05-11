@@ -185,6 +185,7 @@ dependencies = [
     { name = "openai" },
     { name = "openai-agents" },
     { name = "pylint" },
+    { name = "python-dotenv" },
 ]
 
 [package.metadata]
@@ -192,6 +193,7 @@ requires-dist = [
     { name = "openai", specifier = ">=1.0.0" },
     { name = "openai-agents", specifier = ">=0.1.0" },
     { name = "pylint", specifier = ">=3.0.0" },
+    { name = "python-dotenv", specifier = ">=1.0.0" },
 ]
 
 [[package]]

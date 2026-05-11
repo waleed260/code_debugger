@@ -2,8 +2,9 @@
 
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![OpenAI Agents SDK](https://img.shields.io/badge/OpenAI-Agents%20SDK-green.svg)](https://github.com/openai/openai-agents-python)
+[![OpenRouter](https://img.shields.io/badge/OpenRouter-Supported-orange.svg)](https://openrouter.ai/)
 
-A sophisticated AI-powered debugging assistant that uses **three specialized agents** to analyze errors, generate fixes, and validate solutions. Built with the **OpenAI Agents SDK**.
+A sophisticated AI-powered debugging assistant that uses **three specialized agents** to analyze errors, generate fixes, and validate solutions. Built with the **OpenAI Agents SDK** and supports **OpenRouter** for flexible model selection.
 
 ---
 
@@ -56,7 +57,7 @@ Agents have access to these powerful tools:
 ### Prerequisites
 
 - Python 3.12 or higher
-- OpenAI API key
+- OpenRouter API key (recommended) or OpenAI API key
 
 ### Quick Install
 
@@ -76,15 +77,39 @@ pip install -e .
 
 ## 🔑 Configuration
 
-Set your OpenAI API key:
+### Option 1: OpenRouter (Recommended)
+
+OpenRouter provides access to multiple AI models including GPT-4, Claude, Gemini, and more through a single API.
 
 ```bash
-# Option 1: Environment variable (recommended)
+# Get your API key from https://openrouter.ai/keys
+
+# Create a .env file
+cat > .env << EOF
+OPENROUTER_API_KEY=your-openrouter-api-key-here
+OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
+OPENROUTER_MODEL=gpt-3.5-turbo
+EOF
+```
+
+**Available Models via OpenRouter:**
+- `gpt-4o` - OpenAI GPT-4 Optimized
+- `gpt-3.5-turbo` - OpenAI GPT-3.5 (cost-effective)
+- `google/gemini-2.0-flash-exp:free` - Google Gemini (free tier)
+- `anthropic/claude-3-opus` - Anthropic Claude 3 Opus
+- And many more at [openrouter.ai/models](https://openrouter.ai/models)
+
+### Option 2: OpenAI Direct
+
+```bash
+# Set your OpenAI API key
 export OPENAI_API_KEY="sk-your-api-key-here"
 
-# Option 2: Create a .env file
+# Or create a .env file
 echo "OPENAI_API_KEY=sk-your-api-key-here" > .env
 ```
+
+**Note:** The system automatically detects which configuration you're using based on the environment variables set.
 
 ---
 
@@ -281,6 +306,9 @@ src/code_debugger/
 ## 🧪 Testing
 
 ```bash
+# Run OpenRouter integration test
+uv run python test_openrouter.py
+
 # Run basic tests
 python test_agents.py
 
@@ -290,6 +318,11 @@ python test_openai_agents.py
 # Run the example usage
 python example_usage.py
 ```
+
+The `test_openrouter.py` script verifies that:
+- OpenRouter API key is configured correctly
+- All three agents can communicate with OpenRouter
+- The full debugging cycle completes successfully
 
 ---
 
@@ -309,9 +342,24 @@ python example_usage.py
 
 ### Custom Model
 
+The agents use the model specified in your `.env` file. To change models:
+
+```bash
+# In your .env file
+OPENROUTER_MODEL=gpt-4o  # For more powerful analysis
+# or
+OPENROUTER_MODEL=gpt-3.5-turbo  # For cost-effective debugging
+```
+
+You can also modify the model directly in `src/code_debugger/agents.py`:
+
 ```python
-# Use a different OpenAI model
-orchestrator = SyncDebuggingOrchestrator(model="gpt-4o")
+DebugSleuth = Agent(
+    name="DebugSleuth",
+    instructions=DEBUG_SLEUTH_INSTRUCTIONS,
+    tools=[...],
+    model="gpt-4o"  # Change this
+)
 ```
 
 ### Custom Database Path
@@ -320,6 +368,15 @@ orchestrator = SyncDebuggingOrchestrator(model="gpt-4o")
 # Use a custom SQLite database path
 orchestrator = SyncDebuggingOrchestrator(db_path="/path/to/debug.db")
 ```
+
+### Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `OPENROUTER_API_KEY` | Your OpenRouter API key | Required |
+| `OPENROUTER_BASE_URL` | OpenRouter API endpoint | `https://openrouter.ai/api/v1` |
+| `OPENROUTER_MODEL` | Model to use for agents | `gpt-3.5-turbo` |
+| `DEBUG` | Enable debug logging | `false` |
 
 ---
 
@@ -355,10 +412,18 @@ python test_agents.py
 
 ### Common Issues
 
-**Issue:** `OPENAI_API_KEY not found`
+**Issue:** `OPENROUTER_API_KEY not found`
 ```bash
-# Solution: Set your API key
-export OPENAI_API_KEY="sk-your-key-here"
+# Solution: Create a .env file with your API key
+echo "OPENROUTER_API_KEY=your-key-here" > .env
+```
+
+**Issue:** `Error code: 402 - requires more credits`
+```bash
+# Solution: Either:
+# 1. Add credits to your OpenRouter account at https://openrouter.ai/settings/credits
+# 2. Use a free model like gpt-3.5-turbo or google/gemini-2.0-flash-exp:free
+# 3. Switch to a different model in your .env file
 ```
 
 **Issue:** `Module not found: agents`
@@ -371,6 +436,12 @@ uv sync  # or: pip install -e .
 ```bash
 # Solution: Close other connections or remove the database
 rm debug_sessions.db
+```
+
+**Issue:** `Unknown prefix: google` or model errors
+```bash
+# Solution: Use standard model names like gpt-4o or gpt-3.5-turbo
+# OpenRouter will route them through their API automatically
 ```
 
 ---
