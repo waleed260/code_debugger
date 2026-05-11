@@ -13,7 +13,7 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
             min-height: 100vh;
             padding: 20px;
         }
@@ -64,11 +64,12 @@
         }
 
         .agent-card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #000000 0%, #2d2d2d 100%);
             color: white;
             cursor: pointer;
             position: relative;
             overflow: hidden;
+            border: 1px solid #404040;
         }
 
         .agent-card::before {
@@ -119,7 +120,7 @@
         }
 
         .btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #000000 0%, #333333 100%);
             color: white;
             border: none;
             padding: 15px 30px;
@@ -134,7 +135,8 @@
 
         .btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.6);
+            background: linear-gradient(135deg, #1a1a1a 0%, #404040 100%);
         }
 
         .btn:disabled {
@@ -144,7 +146,12 @@
         }
 
         .btn-secondary {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            background: linear-gradient(135deg, #2d2d2d 0%, #404040 100%);
+            border: 2px solid #ffffff;
+        }
+
+        .btn-secondary:hover {
+            background: linear-gradient(135deg, #404040 0%, #555555 100%);
         }
 
         .loading {
@@ -159,7 +166,7 @@
 
         .spinner {
             border: 4px solid #f3f3f3;
-            border-top: 4px solid #667eea;
+            border-top: 4px solid #000000;
             border-radius: 50%;
             width: 50px;
             height: 50px;
@@ -185,7 +192,7 @@
         }
 
         .result-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #000000 0%, #2d2d2d 100%);
             color: white;
             padding: 15px 20px;
             border-radius: 8px 8px 0 0;
@@ -219,8 +226,8 @@
         .tab {
             padding: 12px 24px;
             background: white;
-            border: 2px solid #667eea;
-            color: #667eea;
+            border: 2px solid #000000;
+            color: #000000;
             border-radius: 8px;
             cursor: pointer;
             font-weight: 600;
@@ -228,12 +235,12 @@
         }
 
         .tab:hover {
-            background: #667eea;
+            background: #000000;
             color: white;
         }
 
         .tab.active {
-            background: #667eea;
+            background: #000000;
             color: white;
         }
 
@@ -255,7 +262,7 @@
         .metric-value {
             font-size: 2em;
             font-weight: bold;
-            color: #667eea;
+            color: #000000;
             margin-bottom: 5px;
         }
 
@@ -318,7 +325,7 @@
 
         .form-group textarea:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: #000000;
         }
 
         .error {
