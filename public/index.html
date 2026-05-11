@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Debugger - AI-Powered Multi-Agent Debugging</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        .input-group textarea,
+        .input-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .input-group textarea:focus,
+        .input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .input-group textarea {
+            min-height: 150px;
+            resize: vertical;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            width: 100%;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            display: none;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .result {
+            display: none;
+            margin-top: 30px;
+        }
+
+        .result.active {
+            display: block;
+        }
+
+        .result-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .status-badge {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .status-badge.pass {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-badge.fail {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .report {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .agents {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .agent-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+
+        .agent-card h3 {
+            margin-bottom: 10px;
+            font-size: 1.5em;
+        }
+
+        .agent-card p {
+            opacity: 0.9;
+            line-height: 1.6;
+        }
+
+        .features {
+            list-style: none;
+            margin-top: 15px;
+        }
+
+        .features li {
+            padding: 5px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .features li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            font-weight: bold;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .error.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 Code Debugger</h1>
+            <p>AI-Powered Multi-Agent Debugging System</p>
+        </div>
+
+        <div class="card">
+            <h2 style="margin-bottom: 20px;">Debug Your Code</h2>
+
+            <div class="input-group">
+                <label for="errorTrace">Error Trace / Stack Trace *</label>
+                <textarea id="errorTrace" placeholder="Paste your error trace here...
+Example:
+Traceback (most recent call last):
+  File &quot;app.py&quot;, line 42, in process
+    item = items[index]
+IndexError: list index out of range"></textarea>
+            </div>
+
+            <div class="input-group">
+                <label for="failingFile">Failing File</label>
+                <input type="text" id="failingFile" placeholder="e.g., app.py">
+            </div>
+
+            <div class="input-group">
+                <label for="failingLine">Failing Line Number</label>
+                <input type="number" id="failingLine" placeholder="e.g., 42">
+            </div>
+
+            <button class="btn" onclick="debugCode()">🔍 Analyze Error</button>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Running multi-agent analysis...</p>
+                <p style="font-size: 14px; color: #666; margin-top: 10px;">
+                    Debug Sleuth → Solution Architect → Reliability Engineer
+                </p>
+            </div>
+
+            <div class="error" id="error"></div>
+
+            <div class="result" id="result">
+                <div class="result-header">
+                    <h3>Analysis Complete</h3>
+                    <span class="status-badge" id="statusBadge"></span>
+                </div>
+                <div class="report" id="report"></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2 style="margin-bottom: 20px;">Our AI Agents</h2>
+            <div class="agents">
+                <div class="agent-card">
+                    <h3>🔍 Debug Sleuth</h3>
+                    <p><strong>Root Cause Analysis</strong></p>
+                    <ul class="features">
+                        <li>Forensic stack trace analysis</li>
+                        <li>Data flow tracing</li>
+                        <li>Pattern recognition</li>
+                        <li>Multiple hypotheses</li>
+                    </ul>
+                </div>
+
+                <div class="agent-card">
+                    <h3>🔧 Solution Architect</h3>
+                    <p><strong>Fix Generation</strong></p>
+                    <ul class="features">
+                        <li>3 solution approaches</li>
+                        <li>SOLID principles</li>
+                        <li>Comprehensive tests</li>
+                        <li>Security-first design</li>
+                    </ul>
+                </div>
+
+                <div class="agent-card">
+                    <h3>✅ Reliability Engineer</h3>
+                    <p><strong>Validation</strong></p>
+                    <ul class="features">
+                        <li>10+ code smell checks</li>
+                        <li>Security audit</li>
+                        <li>Quality scoring (0-100)</li>
+                        <li>Production readiness</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function debugCode() {
+            const errorTrace = document.getElementById('errorTrace').value;
+            const failingFile = document.getElementById('failingFile').value;
+            const failingLine = document.getElementById('failingLine').value;
+
+            if (!errorTrace.trim()) {
+                showError('Please provide an error trace');
+                return;
+            }
+
+            // Show loading
+            document.getElementById('loading').classList.add('active');
+            document.getElementById('result').classList.remove('active');
+            document.getElementById('error').classList.remove('active');
+            document.querySelector('.btn').disabled = true;
+
+            try {
+                const response = await fetch('/debug', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        error_trace: errorTrace,
+                        failing_file: failingFile || 'unknown',
+                        failing_line: failingLine ? parseInt(failingLine) : null,
+                        inputs: {}
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showResult(data);
+                } else {
+                    showError(data.error || 'An error occurred');
+                }
+            } catch (error) {
+                showError('Failed to connect to the API: ' + error.message);
+            } finally {
+                document.getElementById('loading').classList.remove('active');
+                document.querySelector('.btn').disabled = false;
+            }
+        }
+
+        function showResult(data) {
+            const resultDiv = document.getElementById('result');
+            const statusBadge = document.getElementById('statusBadge');
+            const report = document.getElementById('report');
+
+            statusBadge.textContent = data.validation_passed ? '✅ PASS' : '❌ FAIL';
+            statusBadge.className = 'status-badge ' + (data.validation_passed ? 'pass' : 'fail');
+
+            report.textContent = data.final_report;
+            resultDiv.classList.add('active');
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = '❌ Error: ' + message;
+            errorDiv.classList.add('active');
+        }
+    </script>
+</body>
+</html>
