@@ -348,37 +348,6 @@ python test_agents.py
 
 ---
 
-## 🐛 Troubleshooting
-
-### Common Issues
-
-**Issue:** `OPENAI_API_KEY not found`
-```bash
-# Solution: Set your API key
-export OPENAI_API_KEY="sk-your-key-here"
-```
-
-**Issue:** `Module not found: agents`
-```bash
-# Solution: Ensure dependencies are installed
-uv sync  # or: pip install -e .
-```
-
-**Issue:** `Database locked`
-```bash
-# Solution: Close other connections or remove the database
-rm debug_sessions.db
-```
-
----
-
-## 📚 Additional Resources
-
-- [Example Usage](example_usage.py)
-- [Test Files](test_agents.py, test_openai_agents.py)
-
----
-
 
 
 
