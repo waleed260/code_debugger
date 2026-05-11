@@ -219,48 +219,62 @@ validator_result = orchestrator.run_reliability_engineer(
 
 ## 📊 Example Output
 
-The system generates comprehensive markdown reports:
+The system generates comprehensive markdown reports. Here's a real example from testing:
+
+### Input Error
+```python
+error_context = {
+    'error_trace': '''Traceback (most recent call last):
+  File "data_processor.py", line 42, in process_batch
+    item = items[current_index]
+IndexError: list index out of range''',
+    'failing_file': 'data_processor.py',
+    'failing_line': 42,
+    'inputs': {
+        'items': [1, 2, 3],
+        'current_index': 5
+    }
+}
+```
+
+### Agent Output
 
 ```markdown
 # 🔍 Debug Analysis Report
 
 ## 📋 Root Cause Summary
-Root Cause: IndexError - list index out of range
-Underlying Issue: Array/list index out of bounds
-Confidence: High
+The root cause of the IndexError at line 42 in data_processor.py is accessing an index in the `items` list beyond its valid range, triggered by the `current_index` variable holding a value greater than the length of the list.
 
 ## 🛠️ The Fix
 ```python
-def safe_array_access(array: list, index: int, default=None):
-    """Safely access array elements with bounds checking."""
-    if not array:
-        return default
-    if 0 <= index < len(array):
-        return array[index]
-    return default
+items = [1, 2, 3]
+
+try:
+    item = items[current_index]
+except IndexError:
+    item = None  # Handle index out of range gracefully
 ```
 
 ## ✅ Verification Steps
-```bash
-pip install pytest
-pytest -v test_fix.py
-```
+1. Open the `data_processor.py` file.
+2. Locate line 42 where the index access is performed.
+3. Replace the index access line with the provided try-except block.
+4. Test the fix using the test snippet to ensure that the IndexError is handled correctly.
+5. Deploy the updated `data_processor.py` file to the relevant environment.
+6. Monitor for any unexpected behavior and ensure the fix works as intended.
 
 ## 📊 Quality Analysis
-| Metric | Status |
-|--------|--------|
-| Code Quality | 85/100 |
-| Security | Secure |
-| Complexity | O(1) |
+| Metric       | Status   |
+|--------------|----------|
+| Code Quality | 95/100   |
+| Security     | Secure   |
+| Complexity   | O(1)     |
 
 ## 📝 Implementation Plan
-1. Replace direct array access with safe_array_access()
-2. Add unit tests for edge cases
-3. Run existing test suite to ensure no regressions
+The proposed fix effectively handles the index out of range exception at line 42 in data_processor.py and provides a graceful way to handle the error.
 
 ## 🚨 Recommendations
-- Consider adding type hints throughout the codebase
-- Add input validation at function boundaries
+Ensure the fix does not hide underlying logic errors and monitor for any unexpected behavior after deployment.
 ```
 
 ---
