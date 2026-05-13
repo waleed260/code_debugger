@@ -187,22 +187,30 @@ ReliabilityEngineer = Agent(
     model_settings=ModelSettings(max_tokens=300)
 )
 
-# Fast single-agent mode - does analysis + fix + validation in one call
+# Fast single-agent mode - reads code, explains error, fixes, tests, returns
 FAST_AGENT_INSTRUCTIONS = """
-You are a debugging agent. Given an error trace, do all three steps:
-1. Identify the root cause
-2. Provide a fix
-3. Validate the fix
+You are a debugging agent that reads the failing code, explains the bug, fixes it, runs tests, and returns the corrected code only if tests pass.
 
-Keep responses concise. Output format:
-## Root Cause
-<1-2 sentences>
+YOUR WORKFLOW:
+1. USE `read_code_file_tool` to read the failing file (around the failing line)
+2. Analyze the root cause of the error
+3. Write the corrected code as a complete file
+4. USE `run_shell_command_tool` to test the corrected code by running it with python
+5. If test passes -> return the corrected code
+6. If test fails -> fix again and retest (up to 2 attempts)
 
-## Fix
-<code block>
+OUTPUT FORMAT:
+## Error Explanation
+<explain what the bug is and why it happens>
 
-## Validation
-PASS or FAIL with 1-sentence reason
+## Corrected Code
+<the complete fixed code file>
+
+## Test Results
+<output from running the code>
+
+## Status
+PASS (if tests passed) or FAIL (if tests failed after retries)
 """
 
 FastDebugAgent = Agent(
@@ -216,7 +224,7 @@ FastDebugAgent = Agent(
         analyze_python_code_tool
     ],
     model=OPENROUTER_MODEL,
-    model_settings=ModelSettings(max_tokens=800)
+    model_settings=ModelSettings(max_tokens=1500)
 )
 
 
@@ -531,22 +539,30 @@ class SyncDebuggingOrchestrator(DebuggingOrchestrator):
         }
 
     def run_fast(self, error_context: Dict[str, Any]) -> Dict[str, Any]:
-        """Single-agent mode - all 3 tasks in one call."""
+        """Single-agent mode - reads code, fixes, tests, returns."""
         async def _run():
+            error_trace = error_context.get('error_trace', 'N/A')
+            failing_file = error_context.get('failing_file', 'unknown')
+            failing_line = error_context.get('failing_line', 'N/A')
+            codebase_path = error_context.get('codebase_path', '.')
+
+            full_path = f"{codebase_path}/{failing_file}" if codebase_path != '.' else failing_file
+
             prompt = f"""
 Error trace:
-{error_context.get('error_trace', 'N/A')}
-Failing file: {error_context.get('failing_file', 'N/A')}
-Line: {error_context.get('failing_line', 'N/A')}
+{error_trace}
 
-Analyze the root cause, provide a fix, and validate it.
+Failing file: {full_path}
+Failing line: {failing_line}
+
+Follow your workflow: read the file with read_code_file_tool('{full_path}', {failing_line}), explain the error, write the corrected code, test it with `python3 {full_path}`, and return the result.
 """
-            result = await Runner.run(FastDebugAgent, prompt)
+            result = await Runner.run(FastDebugAgent, prompt, max_turns=20)
             output = result.final_output
             return {
                 'agent': 'FastDebugAgent',
                 'final_output': output,
-                'validation': 'PASS' if 'PASS' in output.upper().split('## Validation')[1:] or 'PASS' in output.upper().split('validation')[1:] else 'FAIL',
+                'validation': 'PASS' if '## Status\nPASS' in output else 'FAIL',
                 'input': error_context
             }
         return run_async(_run())
