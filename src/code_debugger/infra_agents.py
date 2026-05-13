@@ -10,7 +10,7 @@ Five specialized agents for complete infrastructure management:
 """
 
 from typing import Dict, Any, Optional, List
-from agents import Agent, Runner, function_tool
+from agents import Agent, Runner, function_tool, ModelSettings
 import os
 from dotenv import load_dotenv
 
@@ -19,7 +19,7 @@ load_dotenv()
 # OpenRouter Configuration
 OPENROUTER_API_KEY = os.environ.get('OPENROUTER_API_KEY')
 OPENROUTER_BASE_URL = os.environ.get('OPENROUTER_BASE_URL', 'https://openrouter.ai/api/v1')
-OPENROUTER_MODEL = os.environ.get('OPENROUTER_MODEL', 'openai/gpt-4o')
+OPENROUTER_MODEL = os.environ.get('OPENROUTER_MODEL', 'gpt-4o-mini')
 
 os.environ['OPENAI_API_KEY'] = OPENROUTER_API_KEY
 os.environ['OPENAI_BASE_URL'] = OPENROUTER_BASE_URL
