@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify
 from flask_cors import CORS
 import os
 import sys
@@ -8,7 +8,7 @@ from pathlib import Path
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-PUBLIC_DIR = str(Path(__file__).parent.parent / "public")
+from html_content import INDEX_HTML, INFRASTRUCTURE_HTML
 
 # Lazy imports - only load when needed to avoid cold start failures
 _orchestrator = None
@@ -33,11 +33,11 @@ CORS(app)
 
 @app.route('/')
 def home():
-    return send_from_directory(PUBLIC_DIR, 'index.html')
+    return INDEX_HTML
 
 @app.route('/infrastructure')
 def infrastructure_ui():
-    return send_from_directory(PUBLIC_DIR, 'infrastructure.html')
+    return INFRASTRUCTURE_HTML
 
 @app.route('/api')
 def api_docs():
