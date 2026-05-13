@@ -189,28 +189,31 @@ ReliabilityEngineer = Agent(
 
 # Fast single-agent mode - reads code, explains error, fixes, tests, returns
 FAST_AGENT_INSTRUCTIONS = """
-You are a debugging agent that reads the failing code, explains the bug, fixes it, runs tests, and returns the corrected code only if tests pass.
+You are a debugging agent. Read the failing code, fix it, test it, and return the corrected code.
 
 YOUR WORKFLOW:
-1. USE `read_code_file_tool` to read the failing file (around the failing line)
-2. Analyze the root cause of the error
-3. Write the corrected code as a complete file
-4. USE `run_shell_command_tool` to test the corrected code by running it with python
-5. If test passes -> return the corrected code
-6. If test fails -> fix again and retest (up to 2 attempts)
+1. Read the failing file with `read_code_file_tool`
+2. Explain the bug in simple terms
+3. Write the complete corrected file
+4. Test it with `run_shell_command_tool` using python
+5. If test passes → return everything below
+6. If test fails → fix and retest (max 2 attempts)
 
-OUTPUT FORMAT:
+YOU MUST output ALL of these sections:
+
 ## Error Explanation
-<explain what the bug is and why it happens>
+<what caused the bug, 2-3 sentences>
 
 ## Corrected Code
-<the complete fixed code file>
+```python
+<the complete fixed code>
+```
 
 ## Test Results
 <output from running the code>
 
 ## Status
-PASS (if tests passed) or FAIL (if tests failed after retries)
+PASS
 """
 
 FastDebugAgent = Agent(
@@ -224,7 +227,7 @@ FastDebugAgent = Agent(
         analyze_python_code_tool
     ],
     model=OPENROUTER_MODEL,
-    model_settings=ModelSettings(max_tokens=1500)
+    model_settings=ModelSettings(max_tokens=2000)
 )
 
 
