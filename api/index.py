@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import os
 import sys
@@ -7,6 +7,8 @@ from pathlib import Path
 
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+
+PUBLIC_DIR = str(Path(__file__).parent.parent / "public")
 
 # Lazy imports - only load when needed to avoid cold start failures
 _orchestrator = None
@@ -26,12 +28,16 @@ def get_infra_orchestrator():
         _infra_orchestrator = SyncInfrastructureOrchestrator()
     return _infra_orchestrator
 
-app = Flask(__name__, static_folder="../public", static_url_path="")
+app = Flask(__name__)
 CORS(app)
 
 @app.route('/')
 def home():
-    return app.send_static_file('index.html')
+    return send_from_directory(PUBLIC_DIR, 'index.html')
+
+@app.route('/infrastructure')
+def infrastructure_ui():
+    return send_from_directory(PUBLIC_DIR, 'infrastructure.html')
 
 @app.route('/api')
 def api_docs():
@@ -52,11 +58,6 @@ def api_docs():
             "/infrastructure": "GET - Infrastructure management UI"
         }
     })
-
-@app.route('/infrastructure')
-def infrastructure_ui():
-    """Infrastructure management UI."""
-    return app.send_static_file('infrastructure.html')
 
 @app.route('/health')
 def health():
