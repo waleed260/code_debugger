@@ -37,7 +37,7 @@ load_dotenv()
 # OpenRouter Configuration
 OPENROUTER_API_KEY = os.environ.get('OPENROUTER_API_KEY', 'your-openrouter-api-key-here')
 OPENROUTER_BASE_URL = os.environ.get('OPENROUTER_BASE_URL', 'https://openrouter.ai/api/v1')
-OPENROUTER_MODEL = os.environ.get('OPENROUTER_MODEL', 'gpt-4o-mini')
+OPENROUTER_MODEL = os.environ.get('OPENROUTER_MODEL', 'gpt-3.5-turbo')
 
 # Set OpenAI environment variables for OpenRouter
 os.environ['OPENAI_API_KEY'] = OPENROUTER_API_KEY
@@ -189,15 +189,12 @@ ReliabilityEngineer = Agent(
 
 # Fast single-agent mode - reads code, explains error, fixes, tests, returns
 FAST_AGENT_INSTRUCTIONS = """
-You are a debugging agent. Read the failing code, fix it, test it, and return the corrected code.
+You are a debugging agent. Given an error trace, explain the bug and return corrected code.
 
 YOUR WORKFLOW:
-1. Read the failing file with `read_code_file_tool`
-2. Explain the bug in simple terms
-3. Write the complete corrected file
-4. Test it with `run_shell_command_tool` using python
-5. If test passes → return everything below
-6. If test fails → fix and retest (max 2 attempts)
+1. Analyze the error trace to understand the root cause
+2. Explain the bug simply
+3. Write the corrected code
 
 YOU MUST output ALL of these sections:
 
@@ -210,7 +207,7 @@ YOU MUST output ALL of these sections:
 ```
 
 ## Test Results
-<output from running the code>
+<self-review: does the fix correctly handle the error case?>
 
 ## Status
 PASS
