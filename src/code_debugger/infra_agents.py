@@ -19,7 +19,7 @@ load_dotenv()
 # OpenRouter Configuration
 OPENROUTER_API_KEY = os.environ.get('OPENROUTER_API_KEY')
 OPENROUTER_BASE_URL = os.environ.get('OPENROUTER_BASE_URL', 'https://openrouter.ai/api/v1')
-OPENROUTER_MODEL = os.environ.get('OPENROUTER_MODEL', 'meta-llama/llama-3.1-8b-instruct:free')
+OPENROUTER_MODEL = os.environ.get('OPENROUTER_MODEL', 'gpt-3.5-turbo')
 
 os.environ['OPENAI_API_KEY'] = OPENROUTER_API_KEY
 os.environ['OPENAI_BASE_URL'] = OPENROUTER_BASE_URL
