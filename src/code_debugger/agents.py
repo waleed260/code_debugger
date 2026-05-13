@@ -187,6 +187,38 @@ ReliabilityEngineer = Agent(
     model_settings=ModelSettings(max_tokens=300)
 )
 
+# Fast single-agent mode - does analysis + fix + validation in one call
+FAST_AGENT_INSTRUCTIONS = """
+You are a debugging agent. Given an error trace, do all three steps:
+1. Identify the root cause
+2. Provide a fix
+3. Validate the fix
+
+Keep responses concise. Output format:
+## Root Cause
+<1-2 sentences>
+
+## Fix
+<code block>
+
+## Validation
+PASS or FAIL with 1-sentence reason
+"""
+
+FastDebugAgent = Agent(
+    name="FastDebugAgent",
+    instructions=FAST_AGENT_INSTRUCTIONS,
+    tools=[
+        list_directory_tool,
+        read_code_file_tool,
+        search_codebase_tool,
+        run_shell_command_tool,
+        analyze_python_code_tool
+    ],
+    model=OPENROUTER_MODEL,
+    model_settings=ModelSettings(max_tokens=800)
+)
+
 
 # =============================================================================
 # Handoff Functions
@@ -484,26 +516,37 @@ class SyncDebuggingOrchestrator(DebuggingOrchestrator):
         return run_async(_run())
 
     def run_full_debugging_cycle(self, error_context: Dict[str, Any]) -> Dict[str, Any]:
-        """Synchronous version of run_full_debugging_cycle."""
-        print("🔍 Debug Sleuth: Performing root cause analysis...")
-        sleuth_result = self.run_debug_sleuth(error_context)
-
-        print("🔧 Solution Architect: Creating a fix...")
-        architect_result = self.run_solution_architect(sleuth_result['final_output'])
-
-        print("✅ Reliability Engineer: Validating the fix...")
-        validator_result = self.run_reliability_engineer(
-            architect_result['final_output'],
-            sleuth_result['final_output']
-        )
+        """Synchronous version of run_full_debugging_cycle (fast path uses single agent)."""
+        print("🚀 Fast Debug Agent: Analyzing, fixing, and validating...")
+        fast_result = self.run_fast(error_context)
 
         print("🎉 Debugging cycle completed!")
-
         return {
-            'session_history': self.session_history,
-            'root_cause_analysis': sleuth_result,
-            'solution_architecture': architect_result,
-            'reliability_validation': validator_result,
-            'final_report': validator_result['final_output'],
-            'validation_passed': validator_result['validation_passed']
+            'session_history': [fast_result],
+            'root_cause_analysis': fast_result,
+            'solution_architecture': fast_result,
+            'reliability_validation': fast_result,
+            'final_report': fast_result['final_output'],
+            'validation_passed': 'PASS' in fast_result['validation'].upper()
         }
+
+    def run_fast(self, error_context: Dict[str, Any]) -> Dict[str, Any]:
+        """Single-agent mode - all 3 tasks in one call."""
+        async def _run():
+            prompt = f"""
+Error trace:
+{error_context.get('error_trace', 'N/A')}
+Failing file: {error_context.get('failing_file', 'N/A')}
+Line: {error_context.get('failing_line', 'N/A')}
+
+Analyze the root cause, provide a fix, and validate it.
+"""
+            result = await Runner.run(FastDebugAgent, prompt)
+            output = result.final_output
+            return {
+                'agent': 'FastDebugAgent',
+                'final_output': output,
+                'validation': 'PASS' if 'PASS' in output.upper().split('## Validation')[1:] or 'PASS' in output.upper().split('validation')[1:] else 'FAIL',
+                'input': error_context
+            }
+        return run_async(_run())
