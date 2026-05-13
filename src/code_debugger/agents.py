@@ -202,26 +202,60 @@ Output exactly these sections:
 PASS
 """
 
+import time
+
+# Free models to try in order (if rate-limited or unavailable)
+FREE_MODELS = [
+    'meta-llama/llama-3.3-70b-instruct:free',
+    'meta-llama/llama-3.2-3b-instruct:free',
+    'qwen/qwen3-coder:free',
+    'nousresearch/hermes-3-llama-3.1-405b:free',
+    'google/gemma-4-26b-a4b-it:free',
+]
+
 def run_fast_debug(client: OpenAI, error_context: Dict[str, Any]) -> Dict[str, Any]:
-    """Run single-agent debug using OpenRouter directly (bypasses SDK model validation)."""
+    """Run single-agent debug using OpenRouter with retry and model fallback."""
     error_trace = error_context.get('error_trace', 'N/A')
     failing_file = error_context.get('failing_file', 'unknown')
     failing_line = error_context.get('failing_line', 'N/A')
 
-    resp = client.chat.completions.create(
-        model=OPENROUTER_MODEL,
-        messages=[
-            {"role": "system", "content": FAST_SYSTEM_PROMPT},
-            {"role": "user", "content": f"Error:\n{error_trace}\nFile: {failing_file}\nLine: {failing_line}"}
-        ],
-        max_tokens=1500,
-        temperature=0.3
-    )
-    output = resp.choices[0].message.content or ""
+    models_to_try = [OPENROUTER_MODEL] + [m for m in FREE_MODELS if m != OPENROUTER_MODEL]
+
+    for model in models_to_try:
+        for attempt in range(3):
+            try:
+                resp = client.chat.completions.create(
+                    model=model,
+                    messages=[
+                        {"role": "system", "content": FAST_SYSTEM_PROMPT},
+                        {"role": "user", "content": f"Error:\n{error_trace}\nFile: {failing_file}\nLine: {failing_line}"}
+                    ],
+                    max_tokens=1500,
+                    temperature=0.3
+                )
+                output = resp.choices[0].message.content or ""
+                return {
+                    'agent': 'FastDebugAgent',
+                    'final_output': output,
+                    'validation': 'PASS' if '\n## Status\nPASS' in output else 'FAIL',
+                    'input': error_context
+                }
+            except Exception as e:
+                err_str = str(e)
+                # Rate limited - wait and retry same model
+                if '429' in err_str:
+                    time.sleep(5)
+                    continue
+                # Model not found - try next model
+                if '404' in err_str or 'No endpoints' in err_str:
+                    break
+                # Other error - try next model
+                break
+
     return {
         'agent': 'FastDebugAgent',
-        'final_output': output,
-        'validation': 'PASS' if '\n## Status\nPASS' in output else 'FAIL',
+        'final_output': 'Failed to get response from any model',
+        'validation': 'FAIL',
         'input': error_context
     }
 
