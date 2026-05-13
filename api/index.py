@@ -2,15 +2,31 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import os
 import sys
+import traceback
 from pathlib import Path
 
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from code_debugger import SyncDebuggingOrchestrator
-from code_debugger.infra_orchestrator import SyncInfrastructureOrchestrator
+# Lazy imports - only load when needed to avoid cold start failures
+_orchestrator = None
+_infra_orchestrator = None
 
-app = Flask(__name__)
+def get_orchestrator():
+    global _orchestrator
+    if _orchestrator is None:
+        from code_debugger import SyncDebuggingOrchestrator
+        _orchestrator = SyncDebuggingOrchestrator(db_path="/tmp/debug_sessions.db")
+    return _orchestrator
+
+def get_infra_orchestrator():
+    global _infra_orchestrator
+    if _infra_orchestrator is None:
+        from code_debugger.infra_orchestrator import SyncInfrastructureOrchestrator
+        _infra_orchestrator = SyncInfrastructureOrchestrator()
+    return _infra_orchestrator
+
+app = Flask(__name__, static_folder="../public", static_url_path="")
 CORS(app)
 
 @app.route('/')
@@ -62,39 +78,13 @@ def health():
 @app.route('/debug', methods=['POST'])
 @app.route('/api/debug', methods=['POST'])
 def debug_error():
-    """
-    Debug an error using the multi-agent system.
-
-    Expected JSON body:
-    {
-        "error_trace": "Full error trace/stack trace",
-        "failing_file": "path/to/file.py",
-        "failing_line": 42,
-        "inputs": {"var1": "value1"},
-        "codebase_path": "."
-    }
-    """
     try:
         data = request.get_json()
-
         if not data:
-            return jsonify({
-                "error": "No JSON data provided",
-                "example": {
-                    "error_trace": "Traceback (most recent call last)...",
-                    "failing_file": "app.py",
-                    "failing_line": 42,
-                    "inputs": {"items": [1, 2, 3], "index": 5}
-                }
-            }), 400
-
-        # Validate required fields
+            return jsonify({"error": "No JSON data provided"}), 400
         if 'error_trace' not in data:
-            return jsonify({
-                "error": "Missing required field: error_trace"
-            }), 400
+            return jsonify({"error": "Missing required field: error_trace"}), 400
 
-        # Build error context
         error_context = {
             'error_trace': data.get('error_trace'),
             'failing_file': data.get('failing_file', 'unknown'),
@@ -103,11 +93,9 @@ def debug_error():
             'codebase_path': data.get('codebase_path', '.')
         }
 
-        # Run debugging cycle
-        orchestrator = SyncDebuggingOrchestrator()
+        orchestrator = get_orchestrator()
         result = orchestrator.run_full_debugging_cycle(error_context)
 
-        # Return results
         return jsonify({
             "success": True,
             "validation_passed": result['validation_passed'],
@@ -117,7 +105,6 @@ def debug_error():
             "solution_architecture": result['solution_architecture']['final_output'],
             "reliability_validation": result['reliability_validation']['final_output']
         })
-
     except Exception as e:
         return jsonify({
             "success": False,
@@ -127,7 +114,6 @@ def debug_error():
 
 @app.route('/api/agents', methods=['GET'])
 def get_agents():
-    """Get information about available agents."""
     return jsonify({
         "debugging_agents": [
             {
@@ -229,89 +215,40 @@ def get_agents():
 
 @app.route('/api/infrastructure/<agent_type>', methods=['POST'])
 def run_infrastructure_agent(agent_type):
-    """Run a specific infrastructure agent."""
     try:
-        orchestrator = SyncInfrastructureOrchestrator()
-
-        if agent_type == 'infrastructure':
-            result = orchestrator.run_infrastructure_analysis()
-        elif agent_type == 'security':
-            result = orchestrator.run_security_audit()
-        elif agent_type == 'performance':
-            result = orchestrator.run_performance_optimization()
-        elif agent_type == 'cost':
-            result = orchestrator.run_cost_analysis()
-        elif agent_type == 'incident':
-            result = orchestrator.run_incident_response()
-        else:
-            return jsonify({
-                "success": False,
-                "error": f"Unknown agent type: {agent_type}"
-            }), 400
-
-        return jsonify({
-            "success": True,
-            "result": result
-        })
-
+        orch = get_infra_orchestrator()
+        agents = {
+            'infrastructure': orch.run_infrastructure_analysis,
+            'security': orch.run_security_audit,
+            'performance': orch.run_performance_optimization,
+            'cost': orch.run_cost_analysis,
+            'incident': orch.run_incident_response,
+        }
+        if agent_type not in agents:
+            return jsonify({"success": False, "error": f"Unknown agent type: {agent_type}"}), 400
+        result = agents[agent_type]()
+        return jsonify({"success": True, "result": result})
     except Exception as e:
-        return jsonify({
-            "success": False,
-            "error": str(e),
-            "type": type(e).__name__
-        }), 500
+        return jsonify({"success": False, "error": str(e), "type": type(e).__name__}), 500
 
 @app.route('/api/infrastructure/full-audit', methods=['POST'])
 def run_full_infrastructure_audit():
-    """Run complete infrastructure audit with all agents."""
     try:
-        orchestrator = SyncInfrastructureOrchestrator()
-        result = orchestrator.run_full_infrastructure_audit()
-
-        return jsonify({
-            "success": True,
-            "result": result
-        })
-
+        result = get_infra_orchestrator().run_full_infrastructure_audit()
+        return jsonify({"success": True, "result": result})
     except Exception as e:
-        return jsonify({
-            "success": False,
-            "error": str(e),
-            "type": type(e).__name__
-        }), 500
+        return jsonify({"success": False, "error": str(e), "type": type(e).__name__}), 500
 
 @app.route('/api/infrastructure/incident', methods=['POST'])
 def respond_to_incident():
-    """Respond to a specific incident."""
     try:
         data = request.get_json()
-
         if not data or 'description' not in data:
-            return jsonify({
-                "success": False,
-                "error": "Missing incident description"
-            }), 400
-
-        orchestrator = SyncInfrastructureOrchestrator()
-        result = orchestrator.run_incident_response(data['description'])
-
-        return jsonify({
-            "success": True,
-            "result": result
-        })
-
+            return jsonify({"success": False, "error": "Missing incident description"}), 400
+        result = get_infra_orchestrator().run_incident_response(data['description'])
+        return jsonify({"success": True, "result": result})
     except Exception as e:
-        return jsonify({
-            "success": False,
-            "error": str(e),
-            "type": type(e).__name__
-        }), 500
-
-# For Vercel serverless functions
-def handler(request):
-    """Vercel serverless function handler."""
-    with app.request_context(request.environ):
-        return app.full_dispatch_request()
+        return jsonify({"success": False, "error": str(e), "type": type(e).__name__}), 500
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))

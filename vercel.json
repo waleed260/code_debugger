@@ -12,5 +12,9 @@
       "dest": "api/index.py"
     }
   ],
-  "buildCommand": "pip install -r requirements.txt && echo 'Build complete'"
+  "functions": {
+    "api/index.py": {
+      "maxDuration": 30
+    }
+  }
 }
