@@ -148,7 +148,7 @@ Please provide your analysis in this structure:
         return {'success': False, 'error': str(e)}
 
 
-async def test_solution_architect_agent(self, bug_report: str):
+async def test_solution_architect_agent(bug_report: str):
     """Test the Solution Architect agent."""
     print_section("TEST 3: Solution Architect Agent")
     
@@ -349,7 +349,7 @@ def run_all_tests():
     # Test 3: Solution Architect (depends on Sleuth)
     if sleuth_result.get('success'):
         architect_result = asyncio.run(
-            test_solution_architect_agent(None, sleuth_result['output'])
+            test_solution_architect_agent(sleuth_result['output'])
         )
         results['solution_architect'] = architect_result
     else:
