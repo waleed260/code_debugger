@@ -31,13 +31,17 @@ CORS(app)
 
 @app.route('/')
 def home():
-    """Home endpoint with API documentation."""
+    return app.send_static_file('index.html')
+
+@app.route('/api')
+def api_docs():
     return jsonify({
         "name": "Code Debugger & Infrastructure Management API",
         "version": "2.0",
         "description": "Multi-agent system for debugging and infrastructure management",
         "endpoints": {
-            "/": "API documentation",
+            "/": "Web UI",
+            "/api": "API documentation",
             "/health": "Health check",
             "/debug": "POST - Debug an error",
             "/api/debug": "POST - Debug an error (alias)",
@@ -46,19 +50,7 @@ def home():
             "/api/infrastructure/full-audit": "POST - Run full infrastructure audit",
             "/api/infrastructure/incident": "POST - Respond to incident",
             "/infrastructure": "GET - Infrastructure management UI"
-        },
-        "debugging_agents": [
-            "Debug Sleuth - Root Cause Analysis",
-            "Solution Architect - Fix Generation",
-            "Reliability Engineer - Validation"
-        ],
-        "infrastructure_agents": [
-            "Infrastructure Analyzer - System Health",
-            "Security Auditor - Security & Compliance",
-            "Performance Optimizer - Performance Tuning",
-            "Cost Manager - Cost Optimization",
-            "Incident Responder - Incident Management"
-        ]
+        }
     })
 
 @app.route('/infrastructure')
