@@ -8,7 +8,9 @@ from pathlib import Path
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from html_content import INDEX_HTML, INFRASTRUCTURE_HTML
+# Add api directory to path for local imports
+sys.path.insert(0, str(Path(__file__).parent))
+import html_content
 
 # Lazy imports - only load when needed to avoid cold start failures
 _orchestrator = None
@@ -33,11 +35,11 @@ CORS(app)
 
 @app.route('/')
 def home():
-    return INDEX_HTML
+    return html_content.INDEX_HTML
 
 @app.route('/infrastructure')
 def infrastructure_ui():
-    return INFRASTRUCTURE_HTML
+    return html_content.INFRASTRUCTURE_HTML
 
 @app.route('/api')
 def api_docs():
