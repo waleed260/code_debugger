@@ -37,7 +37,7 @@ load_dotenv()
 # OpenRouter Configuration
 OPENROUTER_API_KEY = os.environ.get('OPENROUTER_API_KEY', 'your-openrouter-api-key-here')
 OPENROUTER_BASE_URL = os.environ.get('OPENROUTER_BASE_URL', 'https://openrouter.ai/api/v1')
-OPENROUTER_MODEL = os.environ.get('OPENROUTER_MODEL', 'google/gemini-2.0-flash-exp:free')
+OPENROUTER_MODEL = os.environ.get('OPENROUTER_MODEL', 'openai/gpt-4o')
 
 # Set OpenAI environment variables for OpenRouter
 os.environ['OPENAI_API_KEY'] = OPENROUTER_API_KEY
@@ -210,7 +210,7 @@ DebugSleuth = Agent(
         run_shell_command_tool,
         analyze_python_code_tool
     ],
-    model="google/gemini-2.0-flash-exp:free"
+    model=OPENROUTER_MODEL
 )
 
 
@@ -428,7 +428,7 @@ SolutionArchitect = Agent(
         run_shell_command_tool,
         analyze_python_code_tool
     ],
-    model="google/gemini-2.0-flash-exp:free"
+    model=OPENROUTER_MODEL
 )
 
 
@@ -770,7 +770,7 @@ ReliabilityEngineer = Agent(
         run_shell_command_tool,
         analyze_python_code_tool
     ],
-    model="google/gemini-2.0-flash-exp:free"
+    model=OPENROUTER_MODEL
 )
 
 

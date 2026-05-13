@@ -19,7 +19,7 @@ load_dotenv()
 # OpenRouter Configuration
 OPENROUTER_API_KEY = os.environ.get('OPENROUTER_API_KEY')
 OPENROUTER_BASE_URL = os.environ.get('OPENROUTER_BASE_URL', 'https://openrouter.ai/api/v1')
-OPENROUTER_MODEL = os.environ.get('OPENROUTER_MODEL', 'gpt-3.5-turbo')
+OPENROUTER_MODEL = os.environ.get('OPENROUTER_MODEL', 'openai/gpt-4o')
 
 os.environ['OPENAI_API_KEY'] = OPENROUTER_API_KEY
 os.environ['OPENAI_BASE_URL'] = OPENROUTER_BASE_URL
@@ -285,7 +285,7 @@ InfrastructureAnalyzer = Agent(
         check_docker_containers,
         check_network_connections
     ],
-    model="google/gemini-2.0-flash-exp:free"
+    model=OPENROUTER_MODEL
 )
 
 
@@ -379,7 +379,7 @@ SecurityAuditor = Agent(
         analyze_logs,
         check_network_connections
     ],
-    model="google/gemini-2.0-flash-exp:free"
+    model=OPENROUTER_MODEL
 )
 
 
@@ -476,7 +476,7 @@ PerformanceOptimizer = Agent(
         check_docker_containers,
         check_network_connections
     ],
-    model="google/gemini-2.0-flash-exp:free"
+    model=OPENROUTER_MODEL
 )
 
 
@@ -577,7 +577,7 @@ CostManager = Agent(
         check_running_processes,
         check_docker_containers
     ],
-    model="google/gemini-2.0-flash-exp:free"
+    model=OPENROUTER_MODEL
 )
 
 
@@ -682,5 +682,5 @@ IncidentResponder = Agent(
         analyze_logs,
         check_network_connections
     ],
-    model="google/gemini-2.0-flash-exp:free"
+    model=OPENROUTER_MODEL
 )
