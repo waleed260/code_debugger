@@ -24,6 +24,7 @@ from .tools import (
     analyze_python_code
 )
 from .session_manager import SessionManager
+from .model_provider import get_run_config
 import os
 import json
 import time
@@ -616,7 +617,7 @@ class DebuggingOrchestrator:
         """
         prompt = self._build_sleuth_prompt(error_context)
         
-        result = await Runner.run(DebugSleuth, prompt)
+        result = await Runner.run(DebugSleuth, prompt, run_config=get_run_config())
         
         analysis = {
             'agent': 'DebugSleuth',
@@ -639,7 +640,7 @@ class DebuggingOrchestrator:
         """
         prompt = self._build_architect_prompt(bug_report)
         
-        result = await Runner.run(SolutionArchitect, prompt)
+        result = await Runner.run(SolutionArchitect, prompt, run_config=get_run_config())
         
         fix_proposal = {
             'agent': 'SolutionArchitect',
@@ -664,7 +665,7 @@ class DebuggingOrchestrator:
         """
         prompt = self._build_validator_prompt(fix_proposal, bug_report)
         
-        result = await Runner.run(ReliabilityEngineer, prompt)
+        result = await Runner.run(ReliabilityEngineer, prompt, run_config=get_run_config())
         
         validation = {
             'agent': 'ReliabilityEngineer',
@@ -824,7 +825,7 @@ class SyncDebuggingOrchestrator(DebuggingOrchestrator):
         """Synchronous version of run_debug_sleuth."""
         async def _run():
             prompt = self._build_sleuth_prompt(error_context)
-            result = await Runner.run(DebugSleuth, prompt)
+            result = await Runner.run(DebugSleuth, prompt, run_config=get_run_config())
             analysis = {
                 'agent': 'DebugSleuth',
                 'final_output': result.final_output,
@@ -838,7 +839,7 @@ class SyncDebuggingOrchestrator(DebuggingOrchestrator):
         """Synchronous version of run_solution_architect."""
         async def _run():
             prompt = self._build_architect_prompt(bug_report)
-            result = await Runner.run(SolutionArchitect, prompt)
+            result = await Runner.run(SolutionArchitect, prompt, run_config=get_run_config())
             fix_proposal = {
                 'agent': 'SolutionArchitect',
                 'final_output': result.final_output,
@@ -852,7 +853,7 @@ class SyncDebuggingOrchestrator(DebuggingOrchestrator):
         """Synchronous version of run_reliability_engineer."""
         async def _run():
             prompt = self._build_validator_prompt(fix_proposal, bug_report)
-            result = await Runner.run(ReliabilityEngineer, prompt)
+            result = await Runner.run(ReliabilityEngineer, prompt, run_config=get_run_config())
             validation = {
                 'agent': 'ReliabilityEngineer',
                 'final_output': result.final_output,

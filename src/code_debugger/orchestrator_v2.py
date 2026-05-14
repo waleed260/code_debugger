@@ -21,6 +21,8 @@ from dataclasses import dataclass, field, asdict
 
 from agents import Runner
 
+from .model_provider import get_run_config
+
 from .agents import (
     StackTraceAgent, DependencyAgent, RuntimeAgent, DataFlowAgent,
     FixGenerationAgent, ValidationAgent, RegressionAgent,
@@ -412,7 +414,7 @@ class DebuggingOrchestratorV2:
     async def _run_agent_with_timing(self, agent, prompt: str) -> AgentResult:
         start = time.time()
         try:
-            result = await Runner.run(agent, prompt)
+            result = await Runner.run(agent, prompt, run_config=get_run_config())
             duration = (time.time() - start) * 1000
             token_estimate = len(prompt.split()) + len(result.final_output.split())
             return AgentResult(

@@ -16,6 +16,7 @@ from .infra_agents import (
     IncidentResponder
 )
 from agents import Runner
+from .model_provider import get_run_config
 
 
 class InfrastructureOrchestrator:
@@ -37,7 +38,7 @@ class InfrastructureOrchestrator:
         5. Provide health score and recommendations
         """
 
-        result = await Runner.run(InfrastructureAnalyzer, prompt)
+        result = await Runner.run(InfrastructureAnalyzer, prompt, run_config=get_run_config())
 
         analysis = {
             'agent': 'InfrastructureAnalyzer',
@@ -59,7 +60,7 @@ class InfrastructureOrchestrator:
         4. Identify critical vulnerabilities
         """
 
-        result = await Runner.run(SecurityAuditor, prompt)
+        result = await Runner.run(SecurityAuditor, prompt, run_config=get_run_config())
 
         audit = {
             'agent': 'SecurityAuditor',
@@ -81,7 +82,7 @@ class InfrastructureOrchestrator:
         4. Provide optimization recommendations with expected gains
         """
 
-        result = await Runner.run(PerformanceOptimizer, prompt)
+        result = await Runner.run(PerformanceOptimizer, prompt, run_config=get_run_config())
 
         optimization = {
             'agent': 'PerformanceOptimizer',
@@ -103,7 +104,7 @@ class InfrastructureOrchestrator:
         4. Provide cost optimization recommendations
         """
 
-        result = await Runner.run(CostManager, prompt)
+        result = await Runner.run(CostManager, prompt, run_config=get_run_config())
 
         cost_analysis = {
             'agent': 'CostManager',
@@ -137,7 +138,7 @@ class InfrastructureOrchestrator:
             4. Identify potential issues before they become incidents
             """
 
-        result = await Runner.run(IncidentResponder, prompt)
+        result = await Runner.run(IncidentResponder, prompt, run_config=get_run_config())
 
         response = {
             'agent': 'IncidentResponder',
