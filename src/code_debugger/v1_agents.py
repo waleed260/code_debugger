@@ -750,59 +750,64 @@ def _analyze_source_code(code: str) -> Dict[str, Any]:
         fixed_code = ''
         has_fix = False
 
-    # Build summary
-    error_count = sum(1 for i in issues if i['severity'] == 'error')
-    warning_count = sum(1 for i in issues if i['severity'] == 'warning')
-    style_count = sum(1 for i in issues if i['severity'] == 'style')
-    total = len(issues)
-
+    # Build summary with explicit Error Explanation + Corrected Code sections
     lines_list = [
-        '## Code Analysis & Fix Report\n',
-        f'**Analyzed**: {len(lines)} lines  **Issues**: {total} ({error_count} errors, {warning_count} warnings, {style_count} style)\n',
+        '## Error Explanation\n',
     ]
 
-    if issues:
-        lines_list.append('### Issues Detected\n')
+    if not issues:
+        lines_list.append('No issues found. Code looks clean.\n')
+        error_list = warning_list = style_list = []
+    else:
+        error_list = [i for i in issues if i['severity'] == 'error']
+        warning_list = [i for i in issues if i['severity'] == 'warning']
+        style_list = [i for i in issues if i['severity'] == 'style']
+        lines_list.append(f'**Issues Found**: {len(error_list)} errors, {len(warning_list)} warnings, {len(style_list)} style\n')
+
         for issue in issues:
             icon = '🔴' if issue['severity'] == 'error' else '🟡' if issue['severity'] == 'warning' else '🔵'
-            fix_hint = issue.get('fix', '')
-            fix_part = f' → {fix_hint}' if fix_hint else ''
-            lines_list.append(f'{icon} **L{issue["line"]}**: {issue["message"]}{fix_part}')
-        lines_list.append('')
+            lines_list.append(f'{icon} **L{issue["line"]}**: {issue["message"]}')
 
-    if has_fix:
-        lines_list.append('\n### Fixed Code\n')
+    lines_list.append('')
+    lines_list.append('## Corrected Code\n')
+
+    if has_fix and fixed_code:
         lines_list.append('```diff')
-        for i, (old, new) in enumerate(zip(lines, fixed_lines)):
-            line_num = f'{i+1:3d}'
+        for i in range(len(lines)):
+            ln = f'{i+1:3d}'
+            old = lines[i] if i < len(lines) else ''
+            new = fixed_lines[i] if i < len(fixed_lines) else ''
             if old != new:
-                lines_list.append(f'-{line_num}| {old}')
-                lines_list.append(f'+{line_num}| {new}')
-            else:
-                lines_list.append(f' {line_num}| {old}')
+                lines_list.append(f'-{ln}| {old}')
+                lines_list.append(f'+{ln}| {new}')
+            elif old:
+                lines_list.append(f' {ln}| {old}')
         lines_list.append('```\n')
-        lines_list.append('\n---\n')
         lines_list.append(fixed_code)
-        lines_list.append('\n---\n')
+    elif issues:
+        annotated = list(lines)
+        for issue in issues:
+            idx = issue['line'] - 1
+            if 0 <= idx < len(annotated) and not annotated[idx].strip().startswith('#'):
+                indent = len(annotated[idx]) - len(annotated[idx].lstrip())
+                annotated[idx] += f'  # FIX: {issue["message"]}'
+        lines_list.append('```python\n' + '\n'.join(annotated) + '\n```\n')
+        lines_list.append('\n*Manual fixes needed for the issues above.*\n')
     else:
-        if not issues:
-            lines_list.append('✅ No issues found. Code looks clean.\n')
-            lines_list.append('\n```python\n')
-            lines_list.append(code)
-            lines_list.append('\n```\n')
+        lines_list.append('```python\n' + code + '\n```\n')
 
-    if issues:
-        lines_list.append('\n### Recommendations\n')
-        if error_count > 0:
-            lines_list.append('- 🔴 Fix errors before deploying')
-        if warning_count > 0:
-            lines_list.append('- 🟡 Address warnings for better reliability')
-        if style_count > 0:
-            lines_list.append('- 🔵 Apply style suggestions for readability')
+    lines_list.append('\n---\n')
+    lines_list.append('\n### Recommendations\n')
+    if error_list:
+        lines_list.append('- 🔴 Fix errors before deploying')
+    if warning_list:
+        lines_list.append('- 🟡 Address warnings for better reliability')
+    if style_list:
+        lines_list.append('- 🔵 Apply style suggestions for readability')
 
     return {
         'issues': issues,
-        'has_errors': error_count > 0,
+        'has_errors': len(error_list) > 0,
         'has_fix': has_fix,
         'fixed_code': fixed_code,
         'summary': '\n'.join(lines_list),
