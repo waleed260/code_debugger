@@ -4,152 +4,84 @@ INDEX_HTML = """<!DOCTYPE html>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <meta name="theme-color" content="#09090b">
-<title>Code Debugger — AI Debug Agent</title>
+<title>Code Debugger</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
-:root{--bg:#09090b;--surface:#111113;--elevated:#1a1a1e;--border:#27272a;--text:#fafafa;--secondary:#a1a1aa;--muted:#52525b;--accent:#10b981;--accent-dim:rgba(16,185,129,0.1);--accent-glow:rgba(16,185,129,0.2);--font:'Inter',sans-serif;--mono:'JetBrains Mono',monospace;--radius:12px;--sm:8px;--ease:0.2s ease}
-html{scroll-behavior:smooth}
-body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;font-size:14px;line-height:1.6;-webkit-font-smoothing:antialiased}
+:root{--bg:#09090b;--surface:#111113;--elevated:#1a1a1e;--border:#27272a;--text:#fafafa;--secondary:#a1a1aa;--muted:#52525b;--accent:#10b981;--accent-dim:rgba(16,185,129,0.08);--font:'Inter',sans-serif;--mono:'JetBrains Mono',monospace;--radius:12px;--sm:8px}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.6;-webkit-font-smoothing:antialiased;display:flex;flex-direction:column}
 ::selection{background:var(--accent);color:#09090b}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
-.container{max-width:680px;margin:0 auto;padding:40px 20px 64px}
-/* Header */
-header{margin-bottom:36px}
-.logo{display:flex;align-items:center;gap:10px;margin-bottom:4px}
-.logo-icon{width:32px;height:32px;border-radius:8px;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:15px;color:#09090b;font-weight:700;font-family:var(--mono)}
-.logo-text{font-size:1.1rem;font-weight:600;color:var(--text);letter-spacing:-0.01em}
-.tagline{font-size:0.72rem;color:var(--muted)}
-/* Card */
-.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:16px;transition:border-color 0.2s}
-.card:hover{border-color:var(--accent)}
-.card-body{padding:20px 22px}
-.card-label{font-size:0.6rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);padding:10px 22px 0;font-weight:500}
-/* Form */
-.form-group{margin-bottom:14px}
-label{display:block;font-size:0.62rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:5px;font-weight:500}
-textarea,input{width:100%;background:var(--elevated);border:1px solid var(--border);border-radius:var(--sm);padding:10px 13px;font-family:var(--mono);font-size:0.75rem;color:var(--text);transition:border-color 0.2s}
-textarea:focus,input:focus{outline:none;border-color:var(--accent)}
+.container{max-width:680px;margin:0 auto;padding:48px 20px 32px;width:100%;flex:1}
+.logo{display:flex;align-items:center;gap:8px;margin-bottom:32px}
+.logo-icon{width:28px;height:28px;border-radius:7px;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:13px;color:#09090b;font-weight:700;font-family:var(--mono)}
+.logo-text{font-size:1rem;font-weight:600;letter-spacing:-0.01em;color:var(--text)}
+.input-area{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:6px;transition:border-color 0.15s}
+.input-area:focus-within{border-color:var(--accent)}
+textarea{width:100%;background:transparent;border:none;padding:10px 12px;font-family:var(--mono);font-size:0.82rem;color:var(--text);resize:none;min-height:60px;max-height:300px;line-height:1.5}
+textarea:focus{outline:none}
 textarea::placeholder{color:var(--muted)}
-textarea{min-height:110px;resize:vertical;line-height:1.6;font-size:0.7rem}
-.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-/* Button */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:11px 20px;margin-top:12px;border:none;border-radius:var(--sm);font-family:var(--font);font-size:0.78rem;font-weight:600;cursor:pointer;background:var(--accent);color:#09090b;transition:all 0.2s;letter-spacing:0.01em}
-.btn:hover{box-shadow:0 0 24px var(--accent-glow)}
-.btn:disabled{opacity:0.3;cursor:not-allowed}
-.btn svg{width:14px;height:14px}
-/* Result */
-.result-card{display:none}
-.result-card.active{display:block}
-.result-head{display:flex;align-items:center;justify-content:space-between;padding:12px 22px;border-bottom:1px solid var(--border)}
-.result-head span{font-size:0.65rem;color:var(--muted);font-family:var(--mono)}
-.pill{display:inline-flex;align-items:center;gap:4px;padding:2px 10px;border-radius:10px;font-size:0.6rem;font-weight:600;text-transform:uppercase}
-.pill.pass{background:var(--accent-dim);color:var(--accent);border:1px solid rgba(16,185,129,0.25)}
-.pill.fail{background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.25)}
-.result-body{padding:16px 22px 20px}
-.result-pre{background:var(--elevated);border:1px solid var(--border);border-radius:var(--sm);padding:14px;font-family:var(--mono);font-size:0.68rem;line-height:1.5;white-space:pre-wrap;max-height:360px;overflow-y:auto;color:var(--secondary)}
-/* Agent */
-.agent-bar{display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--elevated);border:1px solid var(--border);border-radius:var(--sm);margin-top:6px}
-.agent-bar .pulse{width:8px;height:8px;border-radius:50%;background:var(--accent);flex-shrink:0}
-.agent-bar .name{font-size:0.72rem;font-weight:500;color:var(--secondary)}
-.agent-bar .desc{font-size:0.62rem;color:var(--muted);margin-left:auto}
-/* Meta row */
-.meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
-.meta span{font-size:0.58rem;padding:3px 9px;background:var(--elevated);border:1px solid var(--border);border-radius:5px;color:var(--muted);font-family:var(--mono)}
-/* Nav link */
-.nav-link{display:inline-flex;align-items:center;gap:6px;margin-top:14px;padding:7px 13px;border:1px solid var(--border);border-radius:var(--sm);font-size:0.65rem;color:var(--secondary);transition:all 0.2s;text-decoration:none;background:var(--surface)}
-.nav-link:hover{border-color:var(--accent);color:var(--accent)}
-/* Error */
-.err{display:none;margin-top:10px;padding:9px 13px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.15);border-radius:var(--sm);color:#ef4444;font-size:0.68rem;align-items:flex-start;gap:7px}
-.err.active{display:flex}
-/* Loading */
-.loading-overlay{display:none;position:fixed;inset:0;background:rgba(9,9,11,0.94);z-index:100;align-items:center;justify-content:center;flex-direction:column;gap:20px}
-.loading-overlay.active{display:flex}
-.loading-ring{width:32px;height:32px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-.loading-text{font-size:0.78rem;color:var(--secondary);text-align:center}
-.loading-text span{color:var(--accent)}
-/* Footer */
-footer{margin-top:40px;padding-top:12px;border-top:1px solid var(--border);font-size:0.55rem;color:var(--muted);text-align:center}
-/* Anim */
-@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-.fade{animation:fadeIn 0.35s ease backwards}
-.d1{animation-delay:0.05s}.d2{animation-delay:0.1s}.d3{animation-delay:0.15s}
-@media(prefers-reduced-motion:reduce){*,*::before{animation:none!important}html{scroll-behavior:auto}}
-@media(max-width:600px){.container{padding:24px 14px 40px}.form-row{grid-template-columns:1fr}}
+.input-footer{display:flex;align-items:center;justify-content:space-between;padding:4px 12px 6px}
+.input-footer span{font-size:0.6rem;color:var(--muted)}
+.send-btn{width:28px;height:28px;border-radius:6px;border:none;background:var(--accent);color:#09090b;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:opacity 0.15s}
+.send-btn:hover{opacity:0.85}
+.send-btn:disabled{opacity:0.2;cursor:default}
+.send-btn svg{width:14px;height:14px}
+.output{display:none;margin-top:20px;padding:16px 20px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);font-family:var(--mono);font-size:0.74rem;line-height:1.6;white-space:pre-wrap;color:var(--secondary);max-height:500px;overflow-y:auto}
+.output.show{display:block}
+.output .pass{color:var(--accent);font-weight:600}
+.output .fail{color:#ef4444;font-weight:600}
+.loading{display:none;align-items:center;gap:8px;margin-top:16px;padding:10px 14px}
+.loading.show{display:flex}
+.loading .ring{width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:s 0.7s linear infinite;flex-shrink:0}
+@keyframes s{to{transform:rotate(360deg)}}
+.loading span{font-size:0.72rem;color:var(--muted)}
+.loading .dots::after{content:'';animation:d 1.5s steps(4,end) infinite}
+@keyframes d{0%{content:''}25%{content:'.'}50%{content:'..'}75%{content:'...'}100%{content:''}}
+.status{display:none;margin-top:8px;font-size:0.65rem;font-family:var(--mono);color:var(--muted);padding:0 4px}
+.status.show{display:block}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0}
+footer{padding:16px 20px;text-align:center;font-size:0.55rem;color:var(--muted)}
+@media(max-width:600px){.container{padding:24px 14px 16px}textarea{font-size:0.78rem}}
 </style>
 </head>
 <body>
 <div class="container">
-<header class="fade">
 <div class="logo"><div class="logo-icon">{/}</div><div class="logo-text">Code Debugger</div></div>
-<p class="tagline">AI Debug Agent — root cause analysis, fix generation, validation</p>
-</header>
-
-<div class="card fade d1">
-<div class="card-label">$ debug</div>
-<div class="card-body">
-<form id="debugForm" novalidate>
-<div class="form-group">
-<label for="errorTrace">Error trace <span style="color:var(--muted)">*</span></label>
-<textarea id="errorTrace" autocomplete="off" spellcheck="false" placeholder="Paste stack trace..."></textarea>
-</div>
-<div class="form-row">
-<div class="form-group"><label for="failingFile">File</label><input type="text" id="failingFile" placeholder="app.py"></div>
-<div class="form-group"><label for="failingLine">Line</label><input type="number" id="failingLine" placeholder="42"></div>
-</div>
-</form>
-<div class="err" id="errorMsg" role="alert"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span id="errorText"></span></div>
-<button type="button" class="btn" id="submitBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> Debug</button>
+<div class="input-area">
+<textarea id="input" rows="2" placeholder="Paste an error trace..." autocomplete="off" spellcheck="false"></textarea>
+<div class="input-footer">
+<span>Ctrl+Enter to send</span>
+<button class="send-btn" id="sendBtn" aria-label="Debug">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="22" y1="2" x2="11" y2="13"/><polyline points="22 2 15 22 11 13 2 9 22 2"/></svg>
+</button>
 </div>
 </div>
-
-<div class="card result-card" id="resultCard">
-<div class="result-head"><span>// report</span><span class="pill" id="statusPill"></span></div>
-<div class="result-body"><pre class="result-pre" id="reportContent"></pre></div>
+<div class="loading" id="loading" role="status"><div class="ring"></div><span>Debugging<span class="dots"></span></span></div>
+<div class="status" id="status"></div>
+<div class="output" id="output" role="region" aria-live="polite"></div>
 </div>
-
-<div class="fade d2">
-<div class="agent-bar"><div class="pulse"></div><span class="name">Debug Agent</span><span class="desc">RCA &middot; Fix &middot; Validate</span></div>
-<div class="meta">
-<span>stack trace</span><span>dependency check</span><span>runtime analysis</span><span>data flow</span>
-<span>fix generation</span><span>validation</span><span>regression</span><span>security</span><span>performance</span><span>refactor</span>
-</div>
-</div>
-
-<div style="margin-top:20px" class="fade d3">
-<a href="/infrastructure" class="nav-link">
-<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-Infrastructure
-</a>
-<a href="/v2/" class="nav-link" style="margin-left:6px">
-<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
-Advanced
-</a>
-</div>
-
-<footer>code debugger &middot; single debug agent</footer>
-</div>
-
-<div class="loading-overlay" id="loadingOverlay">
-<div class="loading-ring"></div>
-<div class="loading-text"><span>$</span> Debugging...</div>
-</div>
-
+<footer>Code Debugger</footer>
 <script>
-document.getElementById('submitBtn').addEventListener('click',async()=>{
-const e=document.getElementById('errorTrace'),ff=document.getElementById('failingFile'),fl=document.getElementById('failingLine');
-const em=document.getElementById('errorMsg'),rc=document.getElementById('resultCard'),btn=document.getElementById('submitBtn');
-if(!e.value.trim()){em.classList.add('active');return}
-em.classList.remove('active');rc.classList.remove('active');btn.disabled=true;document.getElementById('loadingOverlay').classList.add('active');
-try{const r=await fetch('/debug',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({error_trace:e.value,failing_file:ff.value||'unknown',failing_line:fl.value?parseInt(fl.value):null})});const d=await r.json();
-if(d.success){const p=document.getElementById('statusPill'),rp=document.getElementById('reportContent');p.className='pill '+(d.validation_passed?'pass':'fail');p.textContent=d.validation_passed?'PASS':'FAIL';rp.textContent=d.final_report;rc.classList.add('active');rc.scrollIntoView({behavior:'smooth'})}
-else{document.getElementById('errorText').textContent=d.error||'Failed';em.classList.add('active')}}
-catch(e2){document.getElementById('errorText').textContent='Connection error';em.classList.add('active')}
-finally{document.getElementById('loadingOverlay').classList.remove('active');btn.disabled=false}});
-document.getElementById('errorTrace').addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.metaKey||e.ctrlKey))document.getElementById('submitBtn').click()});
+const input=document.getElementById('input'),send=document.getElementById('sendBtn'),output=document.getElementById('output'),loading=document.getElementById('loading'),status=document.getElementById('status');
+function autoResize(){input.style.height='auto';input.style.height=Math.min(input.scrollHeight,300)+'px'}
+input.addEventListener('input',autoResize);
+send.addEventListener('click',debug);
+input.addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.metaKey||e.ctrlKey)){e.preventDefault();debug()}});
+async function debug(){
+const text=input.value.trim();if(!text)return;
+send.disabled=true;output.classList.remove('show');output.textContent='';loading.classList.add('show');status.classList.remove('show');
+let dots=0;const dotInt=setInterval(()=>{dots=(dots+1)%4;status.textContent='analyzing'+'.'.repeat(dots)},400);
+try{
+const r=await fetch('/debug',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({error_trace:text,failing_file:'',failing_line:null})});
+const d=await r.json();
+clearInterval(dotInt);loading.classList.remove('show');status.classList.remove('show');
+if(d.success){const passed=d.validation_passed;output.innerHTML=(passed?'<span class="pass">PASS</span>\n\n':'<span class="fail">FAIL</span>\n\n')+d.final_report;output.classList.add('show')}
+else{output.innerHTML='<span class="fail">Error:</span> '+(d.error||'Request failed');output.classList.add('show')}
+}catch(e){clearInterval(dotInt);loading.classList.remove('show');status.classList.remove('show');output.innerHTML='<span class="fail">Connection error</span>';output.classList.add('show')}
+finally{send.disabled=false;input.focus()}}
 </script>
 </body>
 </html>"""
@@ -160,57 +92,57 @@ INFRASTRUCTURE_HTML = """<!DOCTYPE html>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <meta name="theme-color" content="#09090b">
-<title>Infrastructure — Infrastructure Manager</title>
+<title>Infrastructure</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
-:root{--bg:#09090b;--surface:#111113;--elevated:#1a1a1e;--border:#27272a;--text:#fafafa;--secondary:#a1a1aa;--muted:#52525b;--accent:#10b981;--accent-dim:rgba(16,185,129,0.1);--font:'Inter',sans-serif;--mono:'JetBrains Mono',monospace;--radius:12px;--sm:8px;--ease:0.2s ease}
-body{font-family:var(--font);background:var(--bg);color:var(--text);padding:24px;font-size:14px;line-height:1.6;-webkit-font-smoothing:antialiased}
+:root{--bg:#09090b;--surface:#111113;--elevated:#1a1a1e;--border:#27272a;--text:#fafafa;--secondary:#a1a1aa;--muted:#52525b;--accent:#10b981;--font:'Inter',sans-serif;--mono:'JetBrains Mono',monospace;--radius:12px;--sm:8px}
+body{font-family:var(--font);background:var(--bg);color:var(--text);padding:32px 20px;font-size:14px;line-height:1.6;-webkit-font-smoothing:antialiased}
 ::selection{background:var(--accent);color:#09090b}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.container{max-width:680px;margin:0 auto}
-h1{font-size:1.1rem;font-weight:600;letter-spacing:-0.01em;margin-bottom:2px}
-.subtitle{font-size:0.72rem;color:var(--muted);margin-bottom:24px}
-.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px;margin-bottom:14px}
-.card:hover{border-color:var(--accent)}
-select,textarea{width:100%;background:var(--elevated);border:1px solid var(--border);border-radius:var(--sm);padding:9px 12px;font-family:var(--mono);font-size:0.72rem;color:var(--text)}
+.container{max-width:600px;margin:0 auto}
+.logo{display:flex;align-items:center;gap:8px;margin-bottom:24px}
+.logo-icon{width:28px;height:28px;border-radius:7px;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:13px;color:#09090b;font-weight:700;font-family:var(--mono)}
+.logo-text{font-size:1rem;font-weight:600;letter-spacing:-0.01em}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:8px}
+select,textarea{width:100%;background:var(--elevated);border:1px solid var(--border);border-radius:var(--sm);padding:9px 12px;font-family:var(--mono);font-size:0.72rem;color:var(--text);margin-bottom:6px}
 select:focus,textarea:focus{outline:none;border-color:var(--accent)}
-.btn{display:flex;align-items:center;justify-content:center;padding:10px 16px;background:var(--accent);color:#09090b;font-family:var(--font);font-size:0.72rem;font-weight:600;border:none;border-radius:var(--sm);cursor:pointer;width:100%;margin-top:10px;transition:all 0.2s}
-.btn:hover{box-shadow:0 0 20px rgba(16,185,129,0.2)}
-.btn:disabled{opacity:0.3}
-.result-pre{background:var(--elevated);border:1px solid var(--border);border-radius:var(--sm);padding:12px;font-family:var(--mono);font-size:0.65rem;line-height:1.5;white-space:pre-wrap;max-height:300px;overflow-y:auto;color:var(--secondary);margin-top:10px}
-a{color:var(--accent);text-decoration:none}
-a:hover{text-decoration:underline}
-footer{margin-top:32px;padding-top:12px;border-top:1px solid var(--border);font-size:0.55rem;color:var(--muted);text-align:center}
+.btn{display:flex;align-items:center;justify-content:center;gap:6px;padding:9px 16px;width:100%;border:none;border-radius:var(--sm);font-family:var(--font);font-size:0.72rem;font-weight:500;cursor:pointer;background:var(--elevated);border:1px solid var(--border);color:var(--secondary);transition:all 0.15s}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn:disabled{opacity:0.25}
+.pre{background:var(--elevated);border:1px solid var(--border);border-radius:var(--sm);padding:12px;margin-top:8px;font-family:var(--mono);font-size:0.65rem;line-height:1.5;white-space:pre-wrap;max-height:300px;overflow-y:auto;color:var(--secondary);display:none}
+.pre.show{display:block}
+a{color:var(--accent);text-decoration:none;font-size:0.65rem;display:inline-block;margin-top:12px;padding:6px 10px;border:1px solid var(--border);border-radius:var(--sm);transition:border-color 0.15s}
+a:hover{border-color:var(--accent)}
+footer{margin-top:32px;text-align:center;font-size:0.55rem;color:var(--muted)}
 </style>
 </head>
 <body>
 <div class="container">
-<h1>Infrastructure</h1>
-<p class="subtitle">System analysis, security, performance, cost, incident</p>
-<div class="card">
+<div class="logo"><div class="logo-icon">{ }</div><div class="logo-text">Infrastructure</div></div>
+<div class="panel">
 <select id="agentSelect">
-<option value="infrastructure">Infrastructure Analyzer</option>
-<option value="security">Security Auditor</option>
-<option value="performance">Performance Optimizer</option>
-<option value="cost">Cost Manager</option>
-<option value="incident">Incident Responder</option>
+<option value="infrastructure">Analyzer</option>
+<option value="security">Security</option>
+<option value="performance">Performance</option>
+<option value="cost">Cost</option>
+<option value="incident">Incident</option>
 </select>
 <button class="btn" id="runBtn">Run</button>
-<pre class="result-pre" id="output">Select an agent and run.</pre>
+<pre class="pre" id="output"></pre>
 </div>
 <a href="/">&larr; Back</a>
-<footer>code debugger &middot; infrastructure</footer>
+<footer>Code Debugger</footer>
 </div>
 <script>
 document.getElementById('runBtn').addEventListener('click',async function(){
 const btn=this,out=document.getElementById('output'),agent=document.getElementById('agentSelect').value;
-btn.disabled=true;out.textContent='Running...';
-try{const r=await fetch('/api/infrastructure/'+agent,{method:'POST'});const d=await r.json();
-if(d.success)out.textContent=JSON.stringify(d.result?.output||d.result||d,null,2);else out.textContent='Error: '+(d.error||'')}
-catch(e){out.textContent='Error: '+e.message}finally{btn.disabled=false}});
+btn.disabled=true;out.classList.remove('show');out.textContent='';
+try{const r=await fetch('/api/infrastructure/'+agent,{method:'POST'});const d=await r.json();out.textContent=d.success?JSON.stringify(d.result?.output||d.result||d,null,2):'Error: '+(d.error||'');out.classList.add('show')}
+catch(e){out.textContent='Error: '+e.message;out.classList.add('show')}
+finally{btn.disabled=false}});
 </script>
 </body>
 </html>"""
