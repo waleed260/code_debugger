@@ -2,424 +2,59 @@
 <html lang="en" style="color-scheme:dark">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
-<meta name="theme-color" content="#0F172A">
-<meta name="color-scheme" content="dark">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="theme-color" content="#06080f">
 <title>Infrastructure — Multi-Agent Infrastructure Management</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
-:root{
-  --bg-deep:#06080f;
-  --bg-surface:#0F172A;
-  --bg-elevated:#1E293B;
-  --bg-hover:#273549;
-  --border:#334155;
-  --border-glow:rgba(34,197,94,0.35);
-  --text-primary:#F8FAFC;
-  --text-secondary:#94A3B8;
-  --text-muted:#64748B;
-  --accent:#22C55E;
-  --accent-dim:rgba(34,197,94,0.12);
-  --accent-b:#06B6D4;
-  --accent-b-dim:rgba(6,182,212,0.12);
-  --accent-c:#F59E0B;
-  --accent-c-dim:rgba(245,158,11,0.12);
-  --font-mono:'JetBrains Mono',monospace;
-  --radius-sm:4px;
-  --radius-md:8px;
-  --radius-lg:16px;
-  --ease:0.2s cubic-bezier(0.16,1,0.3,1);
-}
-html{scroll-behavior:smooth}
-body{
-  font-family:var(--font-mono);
-  background:var(--bg-deep);
-  color:var(--text-primary);
-  min-height:100vh;
-  line-height:1.7;
-  overflow-x:hidden;
-  -webkit-font-smoothing:antialiased;
-  -moz-osx-font-smoothing:grayscale;
-  touch-action:manipulation;
-  -webkit-tap-highlight-color:rgba(34,197,94,0.2);
-  padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
-  font-size:14px;
-}
+:root{--bg-deep:#06080f;--bg-surface:#0F172A;--bg-elevated:#1E293B;--border:#334155;--text:#F8FAFC;--secondary:#94A3B8;--muted:#64748B;--accent:#22C55E;--accent-dim:rgba(34,197,94,0.12);--accent-b:#06B6D4;--danger:#EF4444;--font:'JetBrains Mono',monospace;--radius-sm:4px;--radius-md:8px;--radius-lg:16px;--ease:0.2s cubic-bezier(0.16,1,0.3,1)}
+body{font-family:var(--font);background:var(--bg-deep);color:var(--text);padding:24px;font-size:14px;line-height:1.7}
 ::selection{background:var(--accent);color:var(--bg-deep)}
-:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:var(--radius-sm)}
-:focus:not(:focus-visible){outline:none}
-
-.bg-grid{
-  position:fixed;inset:0;
-  background-image:
-    linear-gradient(rgba(255,255,255,0.03) 1px,transparent 1px),
-    linear-gradient(90deg,rgba(255,255,255,0.03) 1px,transparent 1px);
-  background-size:48px 48px;
-  pointer-events:none;z-index:0;
-}
-.bg-glow{
-  position:fixed;width:500px;height:500px;border-radius:50%;filter:blur(120px);pointer-events:none;z-index:0;opacity:0.08;
-}
-.bg-glow-1{top:-200px;left:-200px;background:var(--accent)}
-.bg-glow-2{bottom:-200px;right:-200px;background:var(--accent-b)}
-.container{max-width:960px;margin:0 auto;padding:48px 24px 80px;position:relative;z-index:1}
-h1{
-  font-size:clamp(1.3rem,3vw,1.8rem);font-weight:500;letter-spacing:-0.01em;
-  text-transform:uppercase;line-height:1.3;
-}
+:focus-visible{outline:2px solid var(--accent)}
+.container{max-width:960px;margin:0 auto}
+h1{font-size:1.3rem;font-weight:500;text-transform:uppercase;margin-bottom:4px}
 h1 em{font-style:normal;color:var(--accent)}
-h2{font-size:0.9rem;font-weight:500;margin-bottom:16px;color:var(--text-primary)}
-p{color:var(--text-secondary);font-size:0.75rem;line-height:1.6}
+.subtitle{font-size:0.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.12em;margin-bottom:24px}
+.card{background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px 24px;margin-bottom:20px}
+.card-label{font-size:0.55rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin-bottom:8px}
+select,textarea{width:100%;background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius-sm);padding:11px 14px;font-family:var(--font);font-size:0.75rem;color:var(--text)}
+.btn{display:inline-flex;align-items:center;justify-content:center;padding:11px 18px;background:var(--accent);color:var(--bg-deep);font-family:var(--font);font-size:0.7rem;font-weight:500;border:none;border-radius:var(--radius-sm);cursor:pointer;width:100%;margin-top:14px}
+.btn:hover{box-shadow:0 0 20px rgba(34,197,94,0.35)}
+.btn:disabled{opacity:0.3}
+.result-pre{background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;font-size:0.68rem;line-height:1.6;white-space:pre-wrap;max-height:360px;overflow-y:auto;color:var(--secondary);margin-top:12px}
 a{color:var(--accent);text-decoration:none}
-a:hover{text-decoration:underline}
-button{cursor:pointer;font-family:var(--font-mono)}
-
-/* Header */
-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:36px;padding-bottom:16px;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:12px}
-header p{font-size:0.65rem;text-transform:uppercase;letter-spacing:0.12em;color:var(--text-muted)}
-
-/* Tab bar */
-.tab-bar{display:flex;gap:0;margin-bottom:28px;border-bottom:1px solid var(--border)}
-.tab-btn{
-  background:none;border:none;border-bottom:2px solid transparent;
-  padding:10px 20px;font-size:0.72rem;font-weight:500;color:var(--text-muted);
-  transition:color var(--ease),border-color var(--ease);
-  letter-spacing:0.04em;
-}
-.tab-btn:hover{color:var(--text-secondary)}
-.tab-btn[aria-selected="true"]{color:var(--accent);border-bottom-color:var(--accent)}
-.tab-content{display:none}
-.tab-content[aria-hidden="false"]{display:block}
-
-/* Card */
-.card{
-  background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius-lg);
-  padding:24px 28px;margin-bottom:20px;
-}
-.card-label{font-size:0.6rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-muted);margin-bottom:8px;font-weight:500}
-.card h3{font-size:0.82rem;font-weight:500;margin-bottom:4px;color:var(--text-primary)}
-.card p{font-size:0.72rem;color:var(--text-secondary);margin-bottom:14px}
-
-/* Agent grid */
-.agent-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}
-.agent-item{
-  background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius-md);
-  padding:20px;display:flex;flex-direction:column;
-  transition:border-color var(--ease),transform var(--ease),box-shadow var(--ease);
-  position:relative;overflow:hidden;
-}
-.agent-item:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,0.2)}
-.agent-item:nth-child(2):hover{border-color:var(--accent-b)}
-.agent-item:nth-child(3):hover{border-color:var(--accent-b)}
-.agent-item:nth-child(4):hover{border-color:var(--accent-c)}
-.agent-item:nth-child(5):hover{border-color:var(--accent-c)}
-.agent-item:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.agent-item .icon{width:32px;height:32px;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;margin-bottom:12px}
-.agent-item:nth-child(1) .icon{background:var(--accent-dim);color:var(--accent)}
-.agent-item:nth-child(2) .icon{background:var(--accent-b-dim);color:var(--accent-b)}
-.agent-item:nth-child(3) .icon{background:var(--accent-dim);color:var(--accent)}
-.agent-item:nth-child(4) .icon{background:var(--accent-c-dim);color:var(--accent-c)}
-.agent-item:nth-child(5) .icon{background:rgba(239,68,68,0.12);color:#EF4444}
-.agent-item .icon svg{width:16px;height:16px}
-.agent-item h3{font-size:0.78rem;font-weight:500;margin-bottom:2px}
-.agent-item p{font-size:0.65rem;color:var(--text-muted);margin-bottom:0;flex:1}
-.agent-btn{
-  margin-top:12px;padding:8px 0;width:100%;
-  background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius-sm);
-  font-size:0.65rem;font-weight:500;color:var(--text-secondary);
-  transition:color var(--ease),border-color var(--ease),background var(--ease);
-  text-transform:uppercase;letter-spacing:0.06em;
-}
-.agent-item:nth-child(1):hover .agent-btn,.agent-item:hover .agent-btn,.agent-item:hover:focus-visible .agent-btn{border-color:var(--accent);color:var(--accent);background:var(--accent-dim)}
-.agent-item:nth-child(2):hover .agent-btn{border-color:var(--accent-b);color:var(--accent-b);background:var(--accent-b-dim)}
-.agent-item:nth-child(3):hover .agent-btn{border-color:var(--accent);color:var(--accent);background:var(--accent-dim)}
-.agent-item:nth-child(4):hover .agent-btn{border-color:var(--accent-c);color:var(--accent-c);background:var(--accent-c-dim)}
-.agent-item:nth-child(5):hover .agent-btn{border-color:#EF4444;color:#EF4444;background:rgba(239,68,68,0.1)}
-
-/* Buttons */
-.btn{
-  display:inline-flex;align-items:center;justify-content:center;gap:6px;
-  padding:12px 20px;
-  background:var(--accent);color:var(--bg-deep);
-  font-family:var(--font-mono);font-size:0.72rem;font-weight:500;
-  border:none;border-radius:var(--radius-sm);
-  cursor:pointer;
-  transition:box-shadow var(--ease),transform var(--ease);
-}
-.btn:hover{box-shadow:0 0 20px var(--border-glow);transform:translateY(-1px)}
-.btn:active{transform:translateY(0)}
-.btn svg{width:14px;height:14px;flex-shrink:0}
-.btn:disabled{opacity:0.35;cursor:not-allowed;transform:none;box-shadow:none}
-.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text-secondary)}
-.btn-outline:hover{color:var(--accent);border-color:var(--accent);box-shadow:none}
-.btn-danger{background:#EF4444;color:white}
-.btn-danger:hover{box-shadow:0 0 20px rgba(239,68,68,0.4)}
-
-/* Form */
-.form-group{margin-bottom:16px}
-label{display:block;font-size:0.65rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-muted);margin-bottom:6px;cursor:pointer;font-weight:500}
-textarea{width:100%;background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;font-family:var(--font-mono);font-size:0.78rem;color:var(--text-primary);transition:border-color var(--ease),box-shadow var(--ease)}
-textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-dim)}
-textarea::placeholder{color:var(--text-muted)}
-textarea{min-height:100px;resize:vertical;line-height:1.7}
-
-/* Loading */
-.loading{display:none;text-align:center;padding:40px}
-.loading.active{display:block}
-.loading-cursor{width:12px;height:18px;background:var(--accent);animation:blink 0.8s step-end infinite;margin:0 auto 16px}
-@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
-.loading p{font-size:0.72rem;color:var(--text-muted)}
-
-/* Result */
-.results{display:none}
-.results.active{display:block}
-.result-section{margin-bottom:16px}
-.result-section .rhead{
-  background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius-sm) var(--radius-sm) 0 0;
-  padding:10px 16px;font-size:0.68rem;font-weight:500;color:var(--accent);border-bottom:none;
-}
-.result-section:nth-child(2) .rhead{color:var(--accent-b)}
-.result-section:nth-child(3) .rhead{color:var(--accent)}
-.result-section:nth-child(4) .rhead{color:var(--accent-c)}
-.result-section:nth-child(5) .rhead{color:#EF4444}
-.result-section .rbody{
-  background:var(--bg-surface);border:1px solid var(--border);border-radius:0 0 var(--radius-sm) var(--radius-sm);
-  padding:14px 16px;font-size:0.72rem;line-height:1.7;
-  white-space:pre-wrap;max-height:400px;overflow-y:auto;
-  color:var(--text-secondary);
-}
-.result-section .rbody::-webkit-scrollbar{width:3px}
-.result-section .rbody::-webkit-scrollbar-thumb{background:var(--bg-hover);border-radius:2px}
-
-/* Error */
-.err{display:none;margin-top:16px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);border-radius:var(--radius-sm);padding:12px 16px;color:#EF4444;font-size:0.72rem;align-items:flex-start;gap:8px}
-.err.active{display:flex}
-.err svg{width:14px;height:14px;flex-shrink:0;margin-top:1px}
-
-/* Nav link */
-.nav-link{display:inline-flex;align-items:center;gap:6px;margin-top:8px;padding:8px 14px;background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:0.68rem;color:var(--text-secondary);transition:color var(--ease),border-color var(--ease)}
-.nav-link:hover{color:var(--accent);border-color:var(--accent);text-decoration:none}
-.nav-link svg{width:12px;height:12px;flex-shrink:0}
-
-/* Footer */
-footer{margin-top:48px;padding-top:16px;border-top:1px solid var(--border);display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
-footer p{font-size:0.6rem;color:var(--text-muted);letter-spacing:0.08em}
-
-/* Animations */
-@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-.af{animation:fadeUp 0.5s cubic-bezier(0.16,1,0.3,1) backwards}
-.ad1{animation-delay:0.05s}
-.ad2{animation-delay:0.1s}
-.ad3{animation-delay:0.15s}
-.ad4{animation-delay:0.2s}
-@media(prefers-reduced-motion:reduce){*,.af{animation:none!important;transition-duration:0.01ms!important}html{scroll-behavior:auto}}
-
-@media(max-width:768px){
-  .container{padding:28px 16px 60px}
-  header{flex-direction:column;align-items:flex-start}
-  .agent-grid{grid-template-columns:1fr}
-  .card{padding:18px 20px}
-  .tab-btn{padding:10px 14px;font-size:0.65rem}
-}
+footer{margin-top:36px;padding-top:12px;border-top:1px solid var(--border);font-size:0.55rem;color:var(--muted)}
 </style>
 </head>
 <body>
-<div class="bg-grid" aria-hidden="true"></div>
-<div class="bg-glow bg-glow-1" aria-hidden="true"></div>
-<div class="bg-glow bg-glow-2" aria-hidden="true"></div>
-
 <div class="container">
-  <header>
-    <h1>infrastructure&nbsp;<em>ctl</em></h1>
-    <p aria-label="Multi-Agent Infrastructure Management">Multi-Agent Infrastructure Management</p>
-  </header>
-
-  <div class="tab-bar" role="tablist" aria-label="Infrastructure management views">
-    <button class="tab-btn" role="tab" aria-selected="true" aria-controls="panel-dashboard" id="tab-dashboard" tabindex="0">Dashboard</button>
-    <button class="tab-btn" role="tab" aria-selected="false" aria-controls="panel-audit" id="tab-audit" tabindex="-1">Full Audit</button>
-    <button class="tab-btn" role="tab" aria-selected="false" aria-controls="panel-incident" id="tab-incident" tabindex="-1">Incident</button>
-  </div>
-
-  <!-- Dashboard -->
-  <div class="tab-content" role="tabpanel" id="panel-dashboard" aria-hidden="false" aria-labelledby="tab-dashboard">
-    <div class="card af">
-      <p class="card-label">// agents</p>
-      <div class="agent-grid">
-        <div class="agent-item" tabindex="0" role="button" aria-label="Run Infrastructure Analyzer">
-          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>
-          <h3>Infrastructure Analyzer</h3>
-          <p>System health, resource monitoring, container checks, capacity planning.</p>
-          <button class="agent-btn" data-agent="infrastructure">Run Analysis</button>
-        </div>
-        <div class="agent-item" tabindex="0" role="button" aria-label="Run Security Auditor">
-          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
-          <h3>Security Auditor</h3>
-          <p>Port scanning, SSL checks, vulnerability assessment, compliance verification.</p>
-          <button class="agent-btn" data-agent="security">Run Audit</button>
-        </div>
-        <div class="agent-item" tabindex="0" role="button" aria-label="Run Performance Optimizer">
-          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
-          <h3>Performance Optimizer</h3>
-          <p>Bottleneck detection, resource tuning, and 0x/100x scalability analysis.</p>
-          <button class="agent-btn" data-agent="performance">Optimize</button>
-        </div>
-        <div class="agent-item" tabindex="0" role="button" aria-label="Run Cost Manager">
-          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
-          <h3>Cost Manager</h3>
-          <p>Waste identification, underutilized resources, savings recommendations.</p>
-          <button class="agent-btn" data-agent="cost">Analyze Costs</button>
-        </div>
-        <div class="agent-item" tabindex="0" role="button" aria-label="Run Incident Responder">
-          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
-          <h3>Incident Responder</h3>
-          <p>Proactive monitoring, anomaly detection, mitigation steps, postmortems.</p>
-          <button class="agent-btn" data-agent="incident">Check Health</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Full Audit -->
-  <div class="tab-content" role="tabpanel" id="panel-audit" aria-hidden="true" aria-labelledby="tab-audit">
-    <div class="card af">
-      <p class="card-label">// full_audit</p>
-      <p style="margin-bottom:16px">Runs all 5 agents in sequence — infrastructure analysis, security audit, performance optimization, cost analysis, and incident response.</p>
-      <button class="btn" id="fullAuditBtn">Run Full Audit</button>
-    </div>
-  </div>
-
-  <!-- Incident -->
-  <div class="tab-content" role="tabpanel" id="panel-incident" aria-hidden="true" aria-labelledby="tab-incident">
-    <div class="card af">
-      <p class="card-label">// incident_response</p>
-      <div class="form-group">
-        <label for="incidentDesc">Describe the Incident</label>
-        <textarea id="incidentDesc" autocomplete="off" spellcheck="true" placeholder="e.g. High CPU usage on production, response times degraded 300%..."></textarea>
-      </div>
-      <button class="btn btn-danger" id="incidentBtn">Analyze & Respond</button>
-    </div>
-  </div>
-
-  <!-- Loading -->
-  <div class="loading" id="loading" role="status" aria-live="polite">
-    <div class="loading-cursor" aria-hidden="true"></div>
-    <p id="loadingText">Running analysis...</p>
-  </div>
-
-  <!-- Error -->
-  <div class="err" id="error" role="alert" aria-live="polite">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-    <span id="errorText"></span>
-  </div>
-
-  <!-- Results -->
-  <div class="results" id="results" role="region" aria-live="polite">
-    <div class="card">
-      <p class="card-label">// output</p>
-      <div id="resultsContent"></div>
-    </div>
-  </div>
-
-  <a href="/" class="nav-link" aria-label="Back to Code Debugger">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
-    Back to Debugger
-  </a>
-
-  <footer>
-    <p>// infrastructure ctl v2.0 // multi-agent system</p>
-    <p>powered by openai agents sdk</p>
-  </footer>
+<h1>infrastructure <em>manager</em></h1>
+<p class="subtitle">Multi-Agent Infrastructure Management — 5 Specialized Agents</p>
+<div class="card">
+<p class="card-label">// agent_selector</p>
+<select id="agentSelect">
+<option value="infrastructure">Infrastructure Analyzer</option>
+<option value="security">Security Auditor</option>
+<option value="performance">Performance Optimizer</option>
+<option value="cost">Cost Manager</option>
+<option value="incident">Incident Responder</option>
+</select>
+<button class="btn" id="runBtn">Run Agent</button>
+<pre class="result-pre" id="output">Select an agent and click Run.</pre>
 </div>
-
+<a href="/">&larr; Back to Debugger</a>
+<footer><p>// infrastructure ctl // 5 agents // openai agents sdk</p></footer>
+</div>
 <script>
-// Tab system
-const tabs=document.querySelectorAll('[role="tab"]');
-const panels=document.querySelectorAll('[role="tabpanel"]');
-tabs.forEach(tab=>{tab.addEventListener('click',()=>{switchTab(tab.id)})});
-function switchTab(id){
-  tabs.forEach(t=>{const s=t.id===id;t.setAttribute('aria-selected',s);t.tabIndex=s?0:-1});
-  panels.forEach(p=>{p.setAttribute('aria-hidden',p.id!=='panel-'+id.replace('tab-',''))});
-}
-document.addEventListener('keydown',e=>{
-  if(e.key!=='ArrowLeft'&&e.key!=='ArrowRight')return;
-  const cur=document.querySelector('[role="tab"][aria-selected="true"]');
-  const arr=[...tabs];const idx=arr.indexOf(cur);
-  const next=e.key==='ArrowRight'?(idx+1)%arr.length:(idx-1+arr.length)%arr.length;
-  arr[next].focus();switchTab(arr[next].id);
-});
-
-// Shared
-const loading=document.getElementById('loading'),loadingText=document.getElementById('loadingText');
-const errorDiv=document.getElementById('error'),errorText=document.getElementById('errorText');
-const results=document.getElementById('results'),resultsContent=document.getElementById('resultsContent');
-function showLoad(t){loadingText.textContent=t;loading.classList.add('active')}
-function hideLoad(){loading.classList.remove('active')}
-function showErr(m){errorText.textContent=m;errorDiv.classList.add('active')}
-function hideErr(){errorDiv.classList.remove('active');results.classList.remove('active')}
-function hideRes(){results.classList.remove('active')}
-
-function renderResult(agentType,output){
-  const names={'infrastructure':'Infrastructure Analyzer','security':'Security Auditor','performance':'Performance Optimizer','cost':'Cost Manager','incident':'Incident Responder'};
-  resultsContent.innerHTML='<div class="result-section"><div class="rhead">$ '+names[agentType]+'</div><div class="rbody">'+(output||'No output')+'</div></div>';
-  results.classList.add('active');results.scrollIntoView({behavior:'smooth',block:'start'})
-}
-function renderFullAudit(r){
-  const items=[
-    {key:'infrastructure_analysis',label:'Infrastructure Analyzer',color:''},
-    {key:'security_audit',label:'Security Auditor',color:'2'},
-    {key:'performance_optimization',label:'Performance Optimizer',color:'3'},
-    {key:'cost_analysis',label:'Cost Manager',color:'4'},
-    {key:'incident_response',label:'Incident Responder',color:'5'}
-  ];
-  let html='';
-  items.forEach((item,i)=>{
-    if(r[item.key])html+='<div class="result-section"><div class="rhead">$ '+item.label+'</div><div class="rbody">'+(r[item.key].output||'No output')+'</div></div>';
-  });
-  resultsContent.innerHTML=html;results.classList.add('active');results.scrollIntoView({behavior:'smooth',block:'start'})
-}
-
-// Agent buttons
-document.querySelectorAll('[data-agent]').forEach(btn=>{
-  btn.addEventListener('click',async function(){
-    const agent=this.dataset.agent;
-    hideErr();hideRes();showLoad('Running '+agent+' analysis...');
-    try{
-      const r=await fetch('/api/infrastructure/'+agent,{method:'POST'});
-      const d=await r.json();
-      if(d.success)renderResult(agent,d.result.output);else showErr(d.error||'Request failed')
-    }catch(e){showErr('Connection failed: '+e.message)}
-    finally{hideLoad()}
-  });
-  // Make parent card clickable too
-  btn.closest('.agent-item').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();btn.click()}});
-});
-
-// Full audit
-document.getElementById('fullAuditBtn').addEventListener('click',async function(){
-  hideErr();hideRes();this.disabled=true;showLoad('Running full audit (5 agents)...');
-  try{
-    const r=await fetch('/api/infrastructure/full-audit',{method:'POST'});
-    const d=await r.json();
-    if(d.success)renderFullAudit(d.result);else showErr(d.error||'Audit failed')
-  }catch(e){showErr('Connection failed: '+e.message)}
-  finally{hideLoad();this.disabled=false}
-});
-
-// Incident
-document.getElementById('incidentBtn').addEventListener('click',async function(){
-  const desc=document.getElementById('incidentDesc').value;
-  if(!desc.trim()){showErr('Describe the incident before submitting');return}
-  hideErr();hideRes();this.disabled=true;showLoad('Analyzing incident...');
-  try{
-    const r=await fetch('/api/infrastructure/incident',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({description:desc})});
-    const d=await r.json();
-    if(d.success)renderResult('incident',d.result.output);else showErr(d.error||'Request failed')
-  }catch(e){showErr('Connection failed: '+e.message)}
-  finally{hideLoad();this.disabled=false}
-});
+document.getElementById('runBtn').addEventListener('click',async function(){
+const btn=this,out=document.getElementById('output'),agent=document.getElementById('agentSelect').value;
+btn.disabled=true;out.textContent='Running '+agent+'...';
+try{const r=await fetch('/api/infrastructure/'+agent,{method:'POST'});const d=await r.json();
+if(d.success)out.textContent=JSON.stringify(d.result?.output||d.result||d,null,2);else out.textContent='Error: '+(d.error||'Unknown')}
+catch(e){out.textContent='Error: '+e.message}finally{btn.disabled=false}});
 </script>
 </body>
 </html>
