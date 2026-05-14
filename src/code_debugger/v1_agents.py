@@ -502,19 +502,178 @@ def _get_code_context_lines(trace_lines: list) -> str:
     return '\n'.join(context[-3:]) if context else ''
 
 
+def _is_likely_traceback(text: str) -> bool:
+    """Detect if input is a traceback vs. source code."""
+    lines = text.strip().split('\n')
+    if not lines:
+        return False
+
+    traceback_indicators = [
+        'traceback', 'error', 'exception', 'filenotfound', 'valueerror',
+        'typeerror', 'attributeerror', 'indexerror', 'keyerror',
+        'importerror', 'modulenotfounderror', 'zerodivisionerror',
+        'nameerror', 'runtimeerror', 'recursionerror', 'systemerror',
+        'stopiteration', 'assertionerror', 'permissionerror',
+        'connectionerror', 'timeouterror', 'oserror', 'memoryerror',
+        'overflowerror', 'lookuperror', 'floatingpointerror',
+        'indentationerror', 'syntaxerror', 'keyboardinterrupt',
+        'systemexit', 'generatorexit',
+    ]
+
+    code_indicators = [
+        'def ', 'class ', 'import ', 'from ', 'return ',
+        'self.', '   def ', '   class ', '@', '"""', "'''",
+        '# ', '    def ', '    class ',
+    ]
+
+    text_lower = text.lower()
+    code_line_count = 0
+    trace_line_count = 0
+
+    for line in lines[:30]:
+        stripped = line.strip()
+        if not stripped:
+            continue
+        for indicator in traceback_indicators:
+            if indicator in stripped.lower():
+                trace_line_count += 1
+                break
+        for indicator in code_indicators:
+            if stripped.startswith(indicator) or stripped.startswith(indicator.strip()):
+                code_line_count += 1
+                break
+
+    if 'file "' in text_lower and '", line ' in text_lower:
+        trace_line_count += 2
+
+    if code_line_count > 3 and trace_line_count == 0:
+        return False
+    if trace_line_count > 0:
+        return True
+
+    return False
+
+
+def _analyze_source_code(code: str) -> Dict[str, Any]:
+    """Analyze arbitrary source code for potential bugs using AST."""
+    import ast as ast_module
+    issues = []
+
+    try:
+        tree = ast_module.parse(code)
+    except SyntaxError as e:
+        return {
+            'issues': [{'type': 'SyntaxError', 'line': e.lineno or 0, 'message': str(e)}],
+            'has_errors': True,
+            'summary': f'Syntax error in code: {e}',
+        }
+
+    for node in ast_module.walk(tree):
+        if isinstance(node, ast_module.FunctionDef):
+            if len(node.args.args) > 6:
+                issues.append({
+                    'type': 'TooManyArguments',
+                    'line': node.lineno,
+                    'message': f'Function "{node.name}" has {len(node.args.args)} parameters (max 6 recommended)',
+                    'severity': 'warning',
+                })
+            if not ast_module.get_docstring(node):
+                issues.append({
+                    'type': 'MissingDocstring',
+                    'line': node.lineno,
+                    'message': f'Function "{node.name}" is missing a docstring',
+                    'severity': 'style',
+                })
+
+        elif isinstance(node, ast_module.ClassDef):
+            if not ast_module.get_docstring(node):
+                issues.append({
+                    'type': 'MissingDocstring',
+                    'line': node.lineno,
+                    'message': f'Class "{node.name}" is missing a docstring',
+                    'severity': 'style',
+                })
+
+        elif isinstance(node, ast_module.Raise):
+            issues.append({
+                'type': 'RaisesException',
+                'line': node.lineno,
+                'message': f'Code raises an exception at line {node.lineno}',
+                'severity': 'info',
+            })
+
+        elif isinstance(node, ast_module.Try):
+            has_bare_except = any(
+                isinstance(h, ast_module.ExceptHandler) and h.type is None
+                for h in node.handlers
+            )
+            if has_bare_except:
+                issues.append({
+                    'type': 'BareExcept',
+                    'line': node.lineno,
+                    'message': 'Bare except: clause catches ALL exceptions, may hide bugs',
+                    'severity': 'warning',
+                })
+
+    passes = 0
+    fails = 0
+    warnings = 0
+    for issue in issues:
+        if issue['severity'] == 'warning':
+            warnings += 1
+        elif issue['type'] == 'RaisesException':
+            passes += 1
+        else:
+            fails += 1
+
+    summary_lines = []
+    summary_lines.append(f'## Code Analysis Report\n')
+    summary_lines.append(f'**File analyzed**: source code ({len(code.splitlines())} lines)')
+    summary_lines.append(f'**Issues found**: {len(issues)}\n')
+
+    if issues:
+        summary_lines.append('### Issues Detected\n')
+        for issue in issues:
+            level_icon = '🔴' if issue['severity'] == 'error' else '🟡' if issue['severity'] == 'warning' else '🔵'
+            summary_lines.append(f'{level_icon} **L{issue["line"]}**: {issue["message"]}')
+    else:
+        summary_lines.append('No issues detected. Code looks clean.\n')
+
+    summary_lines.append('\n### Recommendations\n')
+    if warnings > 0:
+        summary_lines.append(f'- Fix {warnings} warning(s) for better code quality')
+    summary_lines.append('- Add docstrings to functions/classes missing them')
+    summary_lines.append('- Keep function parameters under 6 for readability')
+
+    has_errors = fails > 0
+
+    return {
+        'issues': issues,
+        'has_errors': has_errors,
+        'summary': '\n'.join(summary_lines),
+    }
+
+
 def run_fast_debug(client: OpenAI, error_context: Dict[str, Any]) -> Dict[str, Any]:
     """Instant local debugger - no API calls needed."""
     error_trace = error_context.get('error_trace', '')
     failing_file = error_context.get('failing_file', 'unknown')
     failing_line = error_context.get('failing_line', 'N/A')
 
+    if not _is_likely_traceback(error_trace):
+        analysis = _analyze_source_code(error_trace)
+        return {
+            'agent': 'FastDebugAgent',
+            'final_output': analysis['summary'],
+            'validation': 'FAIL' if analysis['has_errors'] else 'PASS',
+            'input': error_context,
+        }
+
     error_type, error_msg = _extract_error_info(error_trace)
 
-    # Build code context
     trace_lines = error_trace.split('\n')
     code_context = _get_code_context_lines(trace_lines)
 
-    # Find matching fix entry (check pipe-separated keys)
     info = None
     for key, val in ERROR_FIXES.items():
         if error_type in key.split('|'):
