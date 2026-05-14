@@ -3,7 +3,8 @@
 **Version:** 0.2.0  
 **Author:** waleed260  
 **Python:** 3.12+  
-**License:** MIT
+**License:** MIT  
+**Roadmap:** [PRD.md](PRD.md) — full product requirements and future architecture
 
 A multi-agent AI system built on the OpenAI Agents SDK that combines three debug agents (root cause analysis, fix generation, validation) with five infrastructure management agents (health monitoring, security auditing, performance optimization, cost management, incident response). Deployable as a Flask web app on Vercel or used via CLI.
 
@@ -601,6 +602,18 @@ code_debugger/
 ├── test_openrouter.py            # OpenRouter API test
 └── .playwright-mcp/              # Auto-generated browser test artifacts
 ```
+
+---
+
+---
+
+## Roadmap
+
+For the complete vision, future architecture, and phased development plan, see **[PRD.md](PRD.md)**. Key priorities:
+
+1. **Immediate**: Wire AI pipeline as primary path, add execution sandbox, add autonomous retry loop
+2. **Mid-term**: Multi-language support, AST/CFG analysis, debugging RAG, repository graph
+3. **Advanced**: Self-learning memory, distributed orchestration, auto PR generation, IDE integrations
 
 ---
 
