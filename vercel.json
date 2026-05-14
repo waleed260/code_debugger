@@ -12,6 +12,10 @@
   ],
   "routes": [
     {
+      "src": "/v2/ws/.*",
+      "dest": "api_v2/server.py"
+    },
+    {
       "src": "/v2/(.*)",
       "dest": "api_v2/server.py"
     },

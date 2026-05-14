@@ -1,12 +1,7 @@
 """
 FastAPI Server — Async-native API with websocket streaming
 
-Migrated from Flask to FastAPI for:
-- Native async support
-- Websocket streaming for real-time agent output
-- Automatic OpenAPI docs
-- Pydantic request/response validation
-- Better performance (uvicorn)
+Vercel-ready: mounts all routes under /v2 prefix for proper URL routing.
 """
 
 import os
@@ -18,7 +13,7 @@ from pathlib import Path
 from typing import Dict, Any, Optional, List
 from datetime import datetime
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Query
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse
 from pydantic import BaseModel, Field
@@ -47,6 +42,8 @@ app.add_middleware(
 _orchestrator = None
 _observability = ObservabilityTracker()
 
+router = APIRouter(prefix="/v2")
+
 
 def get_orchestrator() -> DebuggingOrchestratorV2:
     global _orchestrator
@@ -63,8 +60,6 @@ def get_orchestrator() -> DebuggingOrchestratorV2:
         )
     return _orchestrator
 
-
-# --- Pydantic Models ---
 
 class DebugRequest(BaseModel):
     error_trace: str = Field(..., description="Error trace or stack trace")
@@ -93,14 +88,14 @@ class IncidentRequest(BaseModel):
     description: str = Field(..., description="Incident description")
 
 
-# --- REST Endpoints ---
+# --- V2 Routes (prefixed with /v2) ---
 
-@app.get("/", response_class=HTMLResponse)
+@router.get("/", response_class=HTMLResponse)
 async def root():
     return HTMLResponse(content=INDEX_HTML)
 
 
-@app.get("/health")
+@router.get("/health")
 async def health():
     return {
         "status": "healthy",
@@ -110,10 +105,9 @@ async def health():
     }
 
 
-@app.post("/debug", response_model=DebugResponse)
+@router.post("/debug", response_model=DebugResponse)
 async def debug(req: DebugRequest):
     orchestrator = get_orchestrator()
-
     error_context = {
         "error_trace": req.error_trace,
         "failing_file": req.failing_file,
@@ -121,9 +115,7 @@ async def debug(req: DebugRequest):
         "codebase_path": req.codebase_path,
         "language": req.language,
     }
-
     result = await orchestrator.run_full_debugging_cycle(error_context)
-
     return DebugResponse(
         success=result.get("success", False),
         session_id=result.get("session_id", ""),
@@ -138,7 +130,7 @@ async def debug(req: DebugRequest):
     )
 
 
-@app.get("/metrics")
+@router.get("/metrics")
 async def get_metrics():
     report = _observability.get_report()
     return {
@@ -152,7 +144,7 @@ async def get_metrics():
     }
 
 
-@app.get("/agents")
+@router.get("/agents")
 async def list_agents():
     return {
         "debug_agents": [
@@ -184,9 +176,9 @@ async def list_agents():
     }
 
 
-# --- WebSocket Streaming ---
+# --- WebSocket (prefixed with /v2) ---
 
-@app.websocket("/ws/debug")
+@router.websocket("/ws/debug")
 async def websocket_debug(websocket: WebSocket):
     await websocket.accept()
     try:
@@ -194,38 +186,21 @@ async def websocket_debug(websocket: WebSocket):
         error_trace = data.get("error_trace", "")
         failing_file = data.get("failing_file", "unknown")
 
-        await websocket.send_json({
-            "type": "status",
-            "stage": "starting",
-            "message": "Starting multi-agent debugging pipeline...",
-        })
+        await websocket.send_json({"type": "status", "stage": "starting", "message": "Starting multi-agent debugging pipeline..."})
 
         orchestrator = get_orchestrator()
 
-        await websocket.send_json({
-            "type": "status",
-            "stage": "enrichment",
-            "message": "Stage 1/4: Fast pattern detection & RAG enrichment...",
-        })
+        await websocket.send_json({"type": "status", "stage": "enrichment", "message": "Stage 1/4: Fast pattern detection & RAG enrichment..."})
         await asyncio.sleep(0.5)
 
-        await websocket.send_json({
-            "type": "status",
-            "stage": "analysis",
-            "message": "Stage 2/4: Running 10 specialized agents for root cause analysis...",
-        })
+        await websocket.send_json({"type": "status", "stage": "analysis", "message": "Stage 2/4: Running 10 specialized agents for root cause analysis..."})
         await asyncio.sleep(0.5)
 
-        await websocket.send_json({
-            "type": "status",
-            "stage": "agents",
-            "agents": [
-                "StackTraceAgent", "DependencyAgent", "RuntimeAgent",
-                "DataFlowAgent", "FixGenerationAgent", "ValidationAgent",
-                "RegressionAgent", "SecurityImpactAgent",
-                "PerformanceImpactAgent", "RefactorAgent",
-            ],
-        })
+        await websocket.send_json({"type": "status", "stage": "agents", "agents": [
+            "StackTraceAgent", "DependencyAgent", "RuntimeAgent", "DataFlowAgent",
+            "FixGenerationAgent", "ValidationAgent", "RegressionAgent",
+            "SecurityImpactAgent", "PerformanceImpactAgent", "RefactorAgent",
+        ]})
         await asyncio.sleep(0.5)
 
         result = await orchestrator.run_full_debugging_cycle({
@@ -243,17 +218,14 @@ async def websocket_debug(websocket: WebSocket):
             "final_report": result.get("final_report", ""),
             "diff": result.get("diff", ""),
         })
-
     except WebSocketDisconnect:
         pass
     except Exception as e:
-        await websocket.send_json({
-            "type": "error",
-            "message": str(e),
-        })
+        await websocket.send_json({"type": "error", "message": str(e)})
 
 
-# --- Web UI ---
+app.include_router(router)
+
 
 INDEX_HTML = """<!DOCTYPE html>
 <html lang="en">
@@ -272,7 +244,7 @@ h1 em{font-style:normal;color:var(--accent)}
 .subtitle{font-size:0.7rem;color:var(--dim);text-transform:uppercase;margin-bottom:32px}
 .card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:24px;margin-bottom:24px}
 label{display:block;font-size:0.65rem;text-transform:uppercase;color:var(--dim);margin-bottom:6px}
-textarea,input,select{width:100%;background:var(--elevated);border:1px solid var(--border);border-radius:4px;padding:12px;font-family:var(--font);font-size:0.8rem;color:var(--text)}
+textarea,input{width:100%;background:var(--elevated);border:1px solid var(--border);border-radius:4px;padding:12px;font-family:var(--font);font-size:0.8rem;color:var(--text)}
 textarea:focus,input:focus{outline:none;border-color:var(--accent)}
 textarea{min-height:150px;resize:vertical}
 .btn{display:inline-flex;align-items:center;gap:8px;padding:12px 24px;background:var(--accent);color:var(--bg);font-family:var(--font);font-size:0.78rem;font-weight:500;border:none;border-radius:4px;cursor:pointer;width:100%;margin-top:16px}
@@ -293,8 +265,7 @@ footer{margin-top:48px;padding-top:16px;border-top:1px solid var(--border);font-
 <body>
 <div class="container">
 <h1>code <em>debugger</em> v2</h1>
-<p class="subtitle">Autonomous AI Debugging Platform — 10 Specialized Agents</p>
-
+<p class="subtitle">V2 API — Autonomous AI Debugging Platform</p>
 <div class="card">
 <label>Error Trace / Stack Trace</label>
 <textarea id="errorTrace" placeholder="Paste error trace here...">Traceback (most recent call last):
@@ -307,29 +278,23 @@ IndexError: list index out of range</textarea>
 <div><label>Failing File</label><input id="failingFile" value="app.py"></div>
 <div><label>Failing Line</label><input id="failingLine" type="number" value="5"></div>
 </div>
-<button class="btn" id="debugBtn">Run Debugging Pipeline</button>
+<button class="btn" id="debugBtn">Run V2 Debugging Pipeline</button>
 </div>
-
 <div id="results" style="display:none">
 <div class="card">
-<div class="result-head">
-<span>// analysis report</span>
-<span class="badge" id="statusBadge"></span>
-</div>
+<div class="result-head"><span>// analysis report</span><span class="badge" id="statusBadge"></span></div>
 <div class="metrics" id="metrics"></div>
 <pre class="result-pre" id="reportContent"></pre>
 </div>
 </div>
-
-<footer><p>// powered by 10 specialized agents // autonomous repair loop // execution sandbox</p></footer>
+<footer><p>// 10 specialized agents // autonomous repair loop // execution sandbox</p></footer>
 </div>
-
 <script>
 const btn=document.getElementById('debugBtn'),results=document.getElementById('results');
 const sb=document.getElementById('statusBadge'),rp=document.getElementById('reportContent'),m=document.getElementById('metrics');
 btn.addEventListener('click',async()=>{
 btn.disabled=true;results.style.display='none';
-const r=await fetch('/debug',{method:'POST',headers:{'Content-Type':'application/json'},
+const r=await fetch('/v2/debug',{method:'POST',headers:{'Content-Type':'application/json'},
 body:JSON.stringify({error_trace:document.getElementById('errorTrace').value,
 failing_file:document.getElementById('failingFile').value||'unknown',
 failing_line:document.getElementById('failingLine').value?parseInt(document.getElementById('failingLine').value):null})});
@@ -351,3 +316,14 @@ if __name__ == "__main__":
     import uvicorn
     port = int(os.environ.get("PORT", 8000))
     uvicorn.run("api_v2.server:app", host="0.0.0.0", port=port, reload=True)
+
+
+# Vercel deployment notes:
+# - Routes are prefixed with /v2/ to match vercel.json routing
+# - WebSocket endpoints will NOT work on Vercel (Python runtime limitation)
+#   Use local uvicorn for WebSocket streaming
+# - On Vercel, access: https://<project>.vercel.app/v2/ (UI)
+#                       https://<project>.vercel.app/v2/debug (API)
+#                       https://<project>.vercel.app/v2/health (health check)
+# - Local dev: uvicorn api_v2.server:app --host 0.0.0.0 --port 8000 --reload
+# - The V1 Flask API remains at root (/debug, /infrastructure, etc.)
