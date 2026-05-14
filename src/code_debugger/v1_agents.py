@@ -578,6 +578,18 @@ def _analyze_source_code(code: str) -> Dict[str, Any]:
         }
 
     # First pass: collect defined names (including function params)
+    # Also get all Python builtins to avoid false positives
+    import builtins as _builtins_module
+    builtins = set(dir(_builtins_module))
+    builtins.update({'self', 'cls', 'Any', 'Dict', 'List', 'Optional', 'Tuple', 'Set',
+                     'Callable', 'Union', 'Type', 'Iterable', 'Iterator', 'Generator',
+                     'Pattern', 'Match', 'defaultdict', 'OrderedDict', 'Counter', 'deque',
+                     'namedtuple', 'ChainMap', 'Enum', 'IntEnum', 'Flag', 'auto',
+                     'dataclass', 'field', 'asdict', 'dataclasses', 'functools', 'itertools',
+                     'collections', '__name__', '__file__', '__init__', '__str__', '__repr__',
+                     '__call__', '__getitem__', '__setitem__', '__delitem__', '__contains__',
+                     '__iter__', '__next__', '__len__', '__enter__', '__exit__'})
+
     for node in ast_module.walk(tree):
         if isinstance(node, ast_module.FunctionDef):
             defined_names.add(node.name)
@@ -621,6 +633,10 @@ def _analyze_source_code(code: str) -> Dict[str, Any]:
         elif isinstance(node, ast_module.comprehension):
             if isinstance(node.target, ast_module.Name):
                 defined_names.add(node.target.id)
+            elif isinstance(node.target, (ast_module.List, ast_module.Tuple)):
+                for elt in node.target.elts:
+                    if isinstance(elt, ast_module.Name):
+                        defined_names.add(elt.id)
         elif isinstance(node, ast_module.ExceptHandler) and node.name:
             defined_names.add(node.name)
         elif isinstance(node, ast_module.With) or isinstance(node, ast_module.AsyncWith):
@@ -632,38 +648,6 @@ def _analyze_source_code(code: str) -> Dict[str, Any]:
     for node in ast_module.walk(tree):
         if isinstance(node, ast_module.Name) and isinstance(node.ctx, ast_module.Load):
             used_names.add(node.id)
-            builtins = {'True', 'False', 'None', 'str', 'int', 'float', 'list', 'dict', 'set',
-                        'tuple', 'bool', 'len', 'range', 'print', 'type', 'isinstance', 'hasattr',
-                        'getattr', 'setattr', 'open', 'super', 'property', 'classmethod',
-                        'staticmethod', 'object', 'Exception', 'BaseException', 'ValueError',
-                        'TypeError', 'KeyError', 'IndexError', 'AttributeError',
-                        'ZeroDivisionError', 'FileNotFoundError', 'ImportError',
-                        'RuntimeError', 'NameError', 'OSError', '__name__', '__file__',
-                        '__init__', '__str__', '__repr__', '__call__', '__getitem__',
-                        '__setitem__', '__delitem__', '__contains__', '__iter__',
-                        '__next__', '__len__', '__enter__', '__exit__', 'self', 'cls',
-                        'Any', 'Dict', 'List', 'Optional', 'Tuple', 'Set', 'Callable',
-                        'Union', 'Type', 'Iterable', 'Iterator', 'Generator', 'await',
-                        'async', 'NotImplemented', 'Ellipsis', 're', 'json', 'os', 'sys',
-                        'math', 'datetime', 'time', 'pathlib', 'Path', 'typing',
-                        'Dict', 'List', 'Any', 'Optional', 'Tuple', 'Set',
-                        'Callable', 'Union', 'Type', 'Iterable', 'Iterator',
-                        'Generator', 'Pattern', 'Match', 'defaultdict', 'OrderedDict',
-                        'Counter', 'deque', 'namedtuple', 'ChainMap', 'UserDict',
-                        'UserList', 'UserString', 'Enum', 'IntEnum', 'Flag', 'auto',
-                        'dataclass', 'field', 'asdict', 'astuple', 'dataclasses',
-                        'functools', 'itertools', 'collections', 'copy', 'deepcopy',
-                        'random', 'statistics', 'hashlib', 'base64', 'binascii',
-                        'io', 'StringIO', 'BytesIO', 'tempfile', 'shutil', 'glob',
-                        'fnmatch', 'linecache', 'pickle', 'shelve', 'marshal',
-                        'sqlite3', 'csv', 'configparser', 'argparse', 'logging',
-                        'warnings', 'traceback', 'inspect', 'pprint', 'textwrap',
-                        'string', 'struct', 'enum', 'numbers', 'decimal', 'fractions',
-                        'uuid', 'socket', 'ssl', 'http', 'urllib', 'email', 'json',
-                        'xml', 'html', 'webbrowser'}  # fmt: skip
-            if node.id not in builtins and node.id not in defined_names and node.id not in used_names:
-                pass  # may be defined later
-
             undefined = node.id not in builtins and node.id not in defined_names
             if undefined and node.id[0].islower() and node.id != 'self' and node.id != 'cls':
                 issues.append({
