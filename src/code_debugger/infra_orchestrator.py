@@ -6,6 +6,8 @@ Coordinates all 5 infrastructure agents to provide comprehensive infrastructure 
 
 from typing import Dict, Any, List
 import asyncio
+import concurrent.futures
+import threading
 from .infra_agents import (
     InfrastructureAnalyzer,
     SecurityAuditor,
@@ -172,23 +174,38 @@ class InfrastructureOrchestrator:
         }
 
 
+def _run_async(coro):
+    """Run an async coroutine from a synchronous context, safely handling running event loops."""
+    try:
+        loop = asyncio.get_event_loop()
+    except RuntimeError:
+        loop = None
+
+    if loop and loop.is_running():
+        with concurrent.futures.ThreadPoolExecutor() as pool:
+            future = pool.submit(lambda: asyncio.run(coro))
+            return future.result()
+    else:
+        return asyncio.run(coro)
+
+
 class SyncInfrastructureOrchestrator(InfrastructureOrchestrator):
     """Synchronous wrapper for InfrastructureOrchestrator."""
 
     def run_infrastructure_analysis(self) -> Dict[str, Any]:
-        return asyncio.run(super().run_infrastructure_analysis())
+        return _run_async(super().run_infrastructure_analysis())
 
     def run_security_audit(self) -> Dict[str, Any]:
-        return asyncio.run(super().run_security_audit())
+        return _run_async(super().run_security_audit())
 
     def run_performance_optimization(self) -> Dict[str, Any]:
-        return asyncio.run(super().run_performance_optimization())
+        return _run_async(super().run_performance_optimization())
 
     def run_cost_analysis(self) -> Dict[str, Any]:
-        return asyncio.run(super().run_cost_analysis())
+        return _run_async(super().run_cost_analysis())
 
     def run_incident_response(self, incident_description: str = None) -> Dict[str, Any]:
-        return asyncio.run(super().run_incident_response(incident_description))
+        return _run_async(super().run_incident_response(incident_description))
 
     def run_full_infrastructure_audit(self) -> Dict[str, Any]:
-        return asyncio.run(super().run_full_infrastructure_audit())
+        return _run_async(super().run_full_infrastructure_audit())
