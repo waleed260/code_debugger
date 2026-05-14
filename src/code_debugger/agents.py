@@ -212,100 +212,294 @@ import re
 ERROR_FIXES = {
     'IndexError': {
         'explanation': 'IndexError occurs when trying to access a list/tuple element at an index that does not exist. This happens when the index is >= the length of the sequence or negative beyond the bounds.',
-        'pattern': r'(IndexError):?\s*(.*)',
         'fix': """def get_item_safe(items, index):
     if not isinstance(index, int):
         raise TypeError("Index must be an integer")
     if index < 0 or index >= len(items):
-        return None  # or raise a custom exception
+        return None
     return items[index]""",
-        'test': """# Test
-items = [10, 20, 30]
+        'test': """items = [10, 20, 30]
 print(get_item_safe(items, 1))  # 20
-print(get_item_safe(items, 5))  # None (no crash)
-print(get_item_safe(items, -1)) # None (no crash)"""
+print(get_item_safe(items, 5))  # None
+print(get_item_safe(items, -1)) # None"""
     },
     'KeyError': {
-        'explanation': 'KeyError occurs when trying to access a dictionary key that does not exist.',
-        'pattern': r"(KeyError):?\s*'?([^']*)'?",
+        'explanation': 'KeyError occurs when trying to access a dictionary key that does not exist. Use `.get()` with a default or check `in` before access.',
         'fix': """def get_value_safe(data, key, default=None):
     if not isinstance(data, dict):
         raise TypeError("Data must be a dictionary")
     return data.get(key, default)""",
-        'test': """# Test
-data = {"name": "Alice", "age": 30}
+        'test': """data = {"name": "Alice", "age": 30}
 print(get_value_safe(data, "name"))     # Alice
-print(get_value_safe(data, "phone"))    # None (no crash)"""
+print(get_value_safe(data, "phone"))    # None"""
     },
     'TypeError': {
-        'explanation': 'TypeError occurs when an operation receives an argument of inappropriate type.',
-        'pattern': r'(TypeError):?\s*(.*)',
+        'explanation': 'TypeError occurs when an operation receives an argument of inappropriate type. Check that all values are the expected type before operating on them.',
         'fix': """def add_safe(a, b):
     try:
         return float(a) + float(b)
     except (ValueError, TypeError):
         return str(a) + str(b)""",
-        'test': """# Test
-print(add_safe(10, 5))      # 15.0
+        'test': """print(add_safe(10, 5))      # 15.0
 print(add_safe("10", 5))    # 15.0
 print(add_safe("a", "b"))   # ab"""
     },
     'ValueError': {
-        'explanation': 'ValueError occurs when a function receives an argument with the right type but inappropriate value.',
-        'pattern': r'(ValueError):?\s*(.*)',
+        'explanation': 'ValueError occurs when a function receives an argument with the right type but inappropriate value. Validate inputs before conversion.',
         'fix': """def convert_safe(value, to_type=int):
     try:
         return to_type(value)
     except (ValueError, TypeError):
         return None""",
-        'test': """# Test
-print(convert_safe("42"))    # 42
-print(convert_safe("abc"))   # None (no crash)"""
+        'test': """print(convert_safe("42"))    # 42
+print(convert_safe("abc"))   # None"""
     },
     'AttributeError': {
-        'explanation': 'AttributeError occurs when trying to access an attribute or method that does not exist on an object.',
-        'pattern': r"(AttributeError):?\s*'?([^']*)'?",
+        'explanation': 'AttributeError occurs when trying to access an attribute or method that does not exist on an object. Use `hasattr()` or `getattr()` with default.',
         'fix': """def safe_getattr(obj, attr, default=None):
     return getattr(obj, attr, default)""",
-        'test': """# Test
-print(safe_getattr("hello", "upper"))  # <method>
+        'test': """print(safe_getattr("hello", "upper"))       # <method>
 print(safe_getattr("hello", "nonexistent"))  # None"""
     },
     'ZeroDivisionError': {
-        'explanation': 'ZeroDivisionError occurs when trying to divide a number by zero.',
-        'pattern': r'(ZeroDivisionError):?\s*(.*)',
+        'explanation': 'ZeroDivisionError occurs when trying to divide a number by zero. Always check the divisor before division.',
         'fix': """def divide_safe(a, b):
     if b == 0:
-        return None  # or float('inf')
+        return None
     return a / b""",
-        'test': """# Test
-print(divide_safe(10, 2))   # 5.0
-print(divide_safe(10, 0))   # None (no crash)"""
+        'test': """print(divide_safe(10, 2))   # 5.0
+print(divide_safe(10, 0))   # None"""
     },
     'FileNotFoundError': {
-        'explanation': 'FileNotFoundError occurs when trying to open a file that does not exist.',
-        'pattern': r'(FileNotFoundError):?\s*(.*)',
+        'explanation': 'FileNotFoundError occurs when trying to open a file that does not exist. Check the path and use try/except or os.path.exists().',
         'fix': """def read_file_safe(path):
     try:
         with open(path, 'r') as f:
             return f.read()
     except FileNotFoundError:
         return None""",
-        'test': """# Test exists
-read_file_safe("nonexistent.txt")  # None (no crash)"""
+        'test': """read_file_safe("nonexistent.txt")  # None"""
     },
-    'ImportError': {
-        'explanation': 'ImportError occurs when a module cannot be imported (missing or not installed).',
-        'pattern': r'(ImportError|ModuleNotFoundError):?\s*(.*)',
+    'ImportError|ModuleNotFoundError': {
+        'explanation': 'ImportError occurs when a module cannot be imported. It may be missing, not installed, or have a circular dependency.',
         'fix': """def safe_import(module_name, fallback=None):
     try:
         return __import__(module_name)
     except ImportError:
         return fallback""",
-        'test': """# Test
-safe_import("nonexistent_module")  # None (no crash)"""
+        'test': """safe_import("nonexistent_module")  # None"""
+    },
+    'NameError': {
+        'explanation': 'NameError occurs when trying to access a variable or name that has not been defined. Check for typos, scope issues, or missing imports.',
+        'fix': """# Check the variable/function name for typos
+# Ensure it is defined before use
+# Use locals() and globals() to inspect scope
+def safe_get_variable(name, default=None):
+    return globals().get(name, locals().get(name, default))""",
+        'test': """print(safe_get_variable("undefined_var"))  # None"""
+    },
+    'UnboundLocalError': {
+        'explanation': 'UnboundLocalError occurs when a local variable is referenced before assignment. This often happens when a variable is used in a function before being assigned, or when reassigning a global without the global keyword.',
+        'fix': """def safe_increment(counter):
+    counter += 1
+    return counter""",
+        'test': """x = 0
+print(safe_increment(x))  # 1"""
+    },
+    'RuntimeError': {
+        'explanation': 'RuntimeError is a general error for operations that fail at runtime. Check the error message for specific details about what went wrong.',
+        'fix': """def run_safe(operation, *args, **kwargs):
+    try:
+        return operation(*args, **kwargs)
+    except RuntimeError as e:
+        return {"error": str(e)}""",
+        'test': """print(run_safe(int, "not_a_number"))  # Returns error dict"""
+    },
+    'RecursionError': {
+        'explanation': 'RecursionError occurs when the recursion depth exceeds Python\'s limit (default 1000). The function is calling itself infinitely or too deeply.',
+        'fix': """import sys
+def safe_recursive(func, max_depth=500):
+    depth = [0]
+    def wrapper(*args, **kwargs):
+        depth[0] += 1
+        if depth[0] > max_depth:
+            depth[0] -= 1
+            raise RecursionError("Max recursion depth reached")
+        try:
+            return func(*args, **kwargs, _wrapper_depth=depth)
+        finally:
+            depth[0] -= 1
+    return wrapper""",
+        'test': """# Use iterative approach instead of recursion when possible"""
+    },
+    'StopIteration': {
+        'explanation': 'StopIteration occurs when next() is called on an iterator that has no more items. Use a default value with next() or iterate with a for loop.',
+        'fix': """def next_safe(iterator, default=None):
+    try:
+        return next(iterator)
+    except StopIteration:
+        return default""",
+        'test': """it = iter([1, 2, 3])
+print(next_safe(it))  # 1
+print(next_safe(it))  # 2
+print(next_safe(it))  # 3
+print(next_safe(it))  # None"""
+    },
+    'AssertionError': {
+        'explanation': 'AssertionError occurs when an assert statement fails. This means a condition that was assumed to be True is actually False.',
+        'fix': """def assert_safe(condition, message="Assertion failed"):
+    if not condition:
+        raise AssertionError(message)""",
+        'test': """assert_safe(1 + 1 == 2, "Math broke")  # Passes silently"""
+    },
+    'PermissionError': {
+        'explanation': 'PermissionError occurs when trying to access a file or resource without the required permissions.',
+        'fix': """def read_file_permission_safe(path):
+    try:
+        with open(path, 'r') as f:
+            return f.read()
+    except PermissionError:
+        return None""",
+        'test': """read_file_permission_safe("/root/secret.txt")  # None"""
+    },
+    'ConnectionError|TimeoutError': {
+        'explanation': 'ConnectionError or TimeoutError occurs when a network connection fails or times out. The remote server may be down, unreachable, or the request took too long.',
+        'fix': """import socket
+def connect_safe(host, port, timeout=5):
+    try:
+        sock = socket.create_connection((host, port), timeout=timeout)
+        sock.close()
+        return True
+    except (ConnectionError, TimeoutError):
+        return False""",
+        'test': """print(connect_safe("localhost", 8080))  # True or False"""
+    },
+    'OSError': {
+        'explanation': 'OSError is the base class for system-related errors (file I/O, permissions, etc.). Check the error message for specifics.',
+        'fix': """def os_operation_safe(operation, *args, **kwargs):
+    try:
+        return operation(*args, **kwargs)
+    except OSError as e:
+        return {"error": str(e), "errno": e.errno}""",
+        'test': """import os
+print(os_operation_safe(os.remove, "/nonexistent/file"))  # Error dict"""
+    },
+    'MemoryError': {
+        'explanation': 'MemoryError occurs when the system runs out of memory. The program is trying to allocate more memory than available.',
+        'fix': """def process_in_chunks(data, chunk_size=1000):
+    results = []
+    for i in range(0, len(data), chunk_size):
+        chunk = data[i:i + chunk_size]
+        results.extend(chunk)
+    return results""",
+        'test': """# Process large datasets in chunks to avoid MemoryError"""
+    },
+    'OverflowError': {
+        'explanation': 'OverflowError occurs when a calculation result is too large to be represented. This is common with large integers in certain operations.',
+        'fix': """import math
+def power_safe(base, exp):
+    try:
+        return base ** exp
+    except OverflowError:
+        return float('inf')""",
+        'test': """print(power_safe(10, 1000))  # inf"""
+    },
+    'LookupError': {
+        'explanation': 'LookupError is the base class for IndexError and KeyError. It occurs when a lookup operation fails on a collection.',
+        'fix': """def lookup_safe(collection, key, default=None):
+    try:
+        return collection[key]
+    except LookupError:
+        return default""",
+        'test': """print(lookup_safe([1, 2, 3], 5))  # None
+print(lookup_safe({"a": 1}, "b"))  # None"""
+    },
+    'SystemError|FloatingPointError': {
+        'explanation': 'SystemError or FloatingPointError indicates an internal interpreter error or a floating-point calculation issue. These are rare and often indicate a bug in the interpreter or extreme numerical edge cases.',
+        'fix': """def safe_float_calc(operation, *args, **kwargs):
+    try:
+        return operation(*args, **kwargs)
+    except (SystemError, FloatingPointError) as e:
+        return {"error": str(e)}""",
+        'test': """# Rare error, use try/except to catch gracefully"""
     }
 }
+
+# Collect known error type names
+KNOWN_ERROR_TYPES = set()
+for key in ERROR_FIXES:
+    for t in key.split('|'):
+        KNOWN_ERROR_TYPES.add(t)
+
+# All known error type names for detection
+KNOWN_ERROR_TYPES_LIST = sorted(KNOWN_ERROR_TYPES, key=len, reverse=True)  # Longer names first to match specific like ModuleNotFoundError before ImportError
+
+# Standard Python built-in error names for unknown detection
+STANDARD_ERROR_NAMES = [
+    'BaseException', 'SystemExit', 'KeyboardInterrupt', 'GeneratorExit',
+    'Exception', 'StopIteration', 'StopAsyncIteration', 'ArithmeticError',
+    'FloatingPointError', 'OverflowError', 'ZeroDivisionError',
+    'AssertionError', 'AttributeError', 'BufferError', 'EOFError',
+    'ImportError', 'ModuleNotFoundError', 'LookupError', 'IndexError',
+    'KeyError', 'MemoryError', 'NameError', 'UnboundLocalError',
+    'OSError', 'BlockingIOError', 'ChildProcessError', 'ConnectionError',
+    'BrokenPipeError', 'ConnectionAbortedError', 'ConnectionRefusedError',
+    'ConnectionResetError', 'FileExistsError', 'FileNotFoundError',
+    'InterruptedError', 'IsADirectoryError', 'NotADirectoryError',
+    'PermissionError', 'ProcessLookupError', 'TimeoutError',
+    'ReferenceError', 'RuntimeError', 'NotImplementedError', 'RecursionError',
+    'SyntaxError', 'IndentationError', 'TabError', 'SystemError',
+    'TypeError', 'ValueError', 'UnicodeError', 'UnicodeDecodeError',
+    'UnicodeEncodeError', 'UnicodeTranslateError', 'Warning',
+    'DeprecationWarning', 'PendingDeprecationWarning', 'RuntimeWarning',
+    'SyntaxWarning', 'UserWarning', 'FutureWarning', 'ImportWarning',
+    'UnicodeWarning', 'BytesWarning', 'ResourceWarning',
+]
+
+
+def _extract_error_info(error_trace: str) -> tuple:
+    """Extract (error_type, error_message) from a traceback string."""
+    lines = error_trace.strip().split('\n')
+
+    # The last non-empty line typically contains "ErrorType: message"
+    for line in reversed(lines):
+        line = line.strip()
+        if not line:
+            continue
+        for known_type in KNOWN_ERROR_TYPES_LIST:
+            colon_idx = line.find(':')
+            if colon_idx != -1:
+                candidate = line[:colon_idx].strip()
+                if candidate == known_type:
+                    return known_type, line[colon_idx + 1:].strip()
+        # Try without colon (e.g. just "KeyboardInterrupt")
+        for known_type in KNOWN_ERROR_TYPES_LIST:
+            if line == known_type:
+                return known_type, ''
+
+    # If no known type matched, try to find ANY Exception-looking word in the last line
+    last_line = ''
+    for line in reversed(lines):
+        if line.strip():
+            last_line = line.strip()
+            break
+
+    if ':' in last_line:
+        candidate = last_line.split(':')[0].strip()
+        if candidate and candidate[0].isupper() and 'Error' in candidate:
+            return candidate, last_line.split(':', 1)[1].strip()
+
+    return 'UnknownError', last_line
+
+
+def _get_code_context_lines(trace_lines: list) -> str:
+    """Extract the relevant 'File X, line Y' context from trace."""
+    context = []
+    for line in trace_lines:
+        if 'File "' in line:
+            context.append(line.strip())
+    return '\n'.join(context[-3:]) if context else ''
+
 
 def run_fast_debug(client: OpenAI, error_context: Dict[str, Any]) -> Dict[str, Any]:
     """Instant local debugger - no API calls needed."""
@@ -313,38 +507,44 @@ def run_fast_debug(client: OpenAI, error_context: Dict[str, Any]) -> Dict[str, A
     failing_file = error_context.get('failing_file', 'unknown')
     failing_line = error_context.get('failing_line', 'N/A')
 
-    # Extract error type from trace
-    error_type = 'UnknownError'
-    error_msg = ''
-    for line in error_trace.split('\n'):
-        line = line.strip()
-        for err_type in ERROR_FIXES:
-            if f'{err_type}:' in line or line == err_type:
-                error_type = err_type
-                error_msg = line
-                break
-        if error_type != 'UnknownError':
+    error_type, error_msg = _extract_error_info(error_trace)
+
+    # Build code context
+    trace_lines = error_trace.split('\n')
+    code_context = _get_code_context_lines(trace_lines)
+
+    # Find matching fix entry (check pipe-separated keys)
+    info = None
+    for key, val in ERROR_FIXES.items():
+        if error_type in key.split('|'):
+            info = val
             break
 
-    info = ERROR_FIXES.get(error_type, {
-        'explanation': f'A {error_type} was raised. Check the error message and stack trace for details.',
-        'fix': f'# Handle {error_type} appropriately\n# Review the logic that caused this error',
-        'test': f'# Fix the root cause of the {error_type}'
-    })
-
-    # Build the code context hint from the trace
-    code_context = ''
-    for line in error_trace.split('\n'):
-        if 'File "' in line and failing_file in line:
-            code_context = line.strip()
-            break
+    if info is None:
+        info = {
+            'explanation': f'**{error_type}**: {error_msg or "No additional details."}\n\n'
+                           f'This is a standard Python exception. To fix it:\n'
+                           f'1. Read the error message carefully — it tells you exactly what went wrong.\n'
+                           f'2. Look at the line listed in the traceback (the last "File X, line Y" entry).\n'
+                           f'3. Check if a variable is None, a collection is empty, or a value has the wrong type.\n'
+                           f'4. Use try/except to handle this error gracefully if it is expected at runtime.',
+            'fix': f"""def handle_{error_type.lower()}(operation, *args, fallback=None, **kwargs):
+    try:
+        return operation(*args, **kwargs)
+    except {error_type} as e:
+        return fallback""",
+            'test': f"""# Wrap the problematic call:
+result = handle_{error_type.lower()}(some_function, arg1, arg2, fallback=None)
+# result will be None if {error_type} is raised"""
+        }
 
     output = f"""## Error Explanation
 {info['explanation']}
 
-**Error**: {error_msg or error_type}
+**Error**: {error_type}: {error_msg}
 **Location**: {failing_file}:{failing_line}
-**Trace**: {code_context}
+**Trace**:
+{code_context}
 
 ## Corrected Code
 ```python
