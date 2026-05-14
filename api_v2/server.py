@@ -310,7 +310,7 @@ try{
 const r=await fetch('/v2/debug',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({error_trace:text,failing_file:'',failing_line:null})});
 const d=await r.json();
 loading.classList.remove('show');
-if(d.success){const passed=d.validation_passed;output.innerHTML=(passed?'<span class="pass">PASS</span>\n\n':'<span class="fail">FAIL</span>\n\n')+d.final_report;output.classList.add('show');
+if(d.success){const passed=d.validation_passed;output.innerHTML=(passed?'<span class=\\"pass\\">PASS</span>\\n\\n':'<span class=\\"fail\\">FAIL</span>\\n\\n')+d.final_report;output.classList.add('show');
 if(d.confidence_score!==undefined){meta.innerHTML='<span>confidence '+Math.round(d.confidence_score*100)+'%</span><span>'+d.agent_timeline.length+' agents</span><span>'+d.repair_iterations+' iterations</span>';meta.classList.add('show')}}
 else{output.innerHTML='<span class="fail">Error:</span> '+(d.detail||'Request failed');output.classList.add('show')}
 }catch(e){loading.classList.remove('show');output.innerHTML='<span class="fail">Connection error</span>';output.classList.add('show')}

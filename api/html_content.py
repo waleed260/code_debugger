@@ -30,7 +30,7 @@ textarea::placeholder{color:var(--muted)}
 .send-btn:disabled{opacity:0.2;cursor:default}
 .send-btn svg{width:14px;height:14px}
 .output{display:none;margin-top:20px;padding:16px 20px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);font-family:var(--mono);font-size:0.74rem;line-height:1.6;white-space:pre-wrap;color:var(--secondary);max-height:500px;overflow-y:auto}
-.output.show{display:block}
+.output.show{display:block!important}
 .output .pass{color:var(--accent);font-weight:600}
 .output .fail{color:#ef4444;font-weight:600}
 .loading{display:none;align-items:center;gap:8px;margin-top:16px;padding:10px 14px}
@@ -78,7 +78,7 @@ try{
 const r=await fetch('/debug',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({error_trace:text,failing_file:'',failing_line:null})});
 const d=await r.json();
 clearInterval(dotInt);loading.classList.remove('show');status.classList.remove('show');
-if(d.success){const passed=d.validation_passed;output.innerHTML=(passed?'<span class="pass">PASS</span>\n\n':'<span class="fail">FAIL</span>\n\n')+d.final_report;output.classList.add('show')}
+if(d.success){const passed=d.validation_passed;output.innerHTML=(passed?'<span class=\\"pass\\">PASS</span>\\n\\n':'<span class=\\"fail\\">FAIL</span>\\n\\n')+d.final_report;output.classList.add('show')}
 else{output.innerHTML='<span class="fail">Error:</span> '+(d.error||'Request failed');output.classList.add('show')}
 }catch(e){clearInterval(dotInt);loading.classList.remove('show');status.classList.remove('show');output.innerHTML='<span class="fail">Connection error</span>';output.classList.add('show')}
 finally{send.disabled=false;input.focus()}}
