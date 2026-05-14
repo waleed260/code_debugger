@@ -1,13 +1,17 @@
 """
-Code Debugger Package
+Code Debugger Package — Multi-Agent AI Debugging & Infrastructure Management System
 
-Multi-agent debugging system using OpenAI Agents SDK for:
-- Root Cause Analysis (Debug Sleuth)
-- Fix Generation (Solution Architect)
-- Validation & Documentation (Reliability Engineer)
+V2 Architecture:
+- 10 specialized debug agents + 5 DB agents
+- Execution sandbox (multi-language)
+- AI-first pipeline with autonomous repair loop
+- AST/CFG intelligence layer
+- Debugging RAG system
+- Patch engine with diff generation
+- Observability stack
 """
 
-from .agents import (
+from .v1_agents import (
     DebugSleuth,
     SolutionArchitect,
     ReliabilityEngineer,
@@ -15,7 +19,7 @@ from .agents import (
     SyncDebuggingOrchestrator,
     handoff_to_fixer,
     handoff_to_validator,
-    handoff_back_to_architect
+    handoff_back_to_architect,
 )
 from .main import main, run_sample_debugging_session
 from .tools import (
@@ -23,18 +27,56 @@ from .tools import (
     read_code_file,
     search_codebase,
     run_shell_command,
-    analyze_python_code
+    analyze_python_code,
+)
+
+# V2 imports
+from .orchestrator_v2 import DebuggingOrchestratorV2, DebugSessionConfig, DebugResult
+from .sandbox import ExecutionSandbox, Language, ExecutionResult, SandboxFile
+from .patch_engine import PatchEngine, FilePatch, PatchSet, PatchResult
+from .code_intelligence import ASTAnalyzer
+from .rag import DebugRAG
+from .test_generator import TestGenerator, TestSuite, GeneratedTest
+from .observability import ObservabilityTracker, ObservabilityReport
+
+# V2 agent package
+from .agents import (
+    StackTraceAgent,
+    DependencyAgent,
+    RuntimeAgent,
+    DataFlowAgent,
+    FixGenerationAgent,
+    ValidationAgent,
+    RegressionAgent,
+    SecurityImpactAgent,
+    PerformanceImpactAgent,
+    RefactorAgent,
 )
 
 __all__ = [
-    # Agents
+    # V1 Agents
     'DebugSleuth',
     'SolutionArchitect',
     'ReliabilityEngineer',
     
-    # Orchestrator
+    # V2 Agents
+    'StackTraceAgent',
+    'DependencyAgent',
+    'RuntimeAgent',
+    'DataFlowAgent',
+    'FixGenerationAgent',
+    'ValidationAgent',
+    'RegressionAgent',
+    'SecurityImpactAgent',
+    'PerformanceImpactAgent',
+    'RefactorAgent',
+    
+    # Orchestrators
     'DebuggingOrchestrator',
     'SyncDebuggingOrchestrator',
+    'DebuggingOrchestratorV2',
+    'DebugSessionConfig',
+    'DebugResult',
     
     # Handoffs
     'handoff_to_fixer',
@@ -50,7 +92,24 @@ __all__ = [
     'read_code_file',
     'search_codebase',
     'run_shell_command',
-    'analyze_python_code'
+    'analyze_python_code',
+    
+    # V2 Modules
+    'ExecutionSandbox',
+    'Language',
+    'ExecutionResult',
+    'SandboxFile',
+    'PatchEngine',
+    'FilePatch',
+    'PatchSet',
+    'PatchResult',
+    'ASTAnalyzer',
+    'DebugRAG',
+    'TestGenerator',
+    'TestSuite',
+    'GeneratedTest',
+    'ObservabilityTracker',
+    'ObservabilityReport',
 ]
 
-__version__ = '0.2.0'
+__version__ = '2.0.0'

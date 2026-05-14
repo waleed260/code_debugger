@@ -4,7 +4,7 @@ Code Debugger CLI - Multi-Agent Debugging System using OpenAI Agents SDK
 This module provides the main entry point for the debugging system.
 """
 
-from .agents import SyncDebuggingOrchestrator, DebuggingOrchestrator
+from .v1_agents import SyncDebuggingOrchestrator, DebuggingOrchestrator
 import asyncio
 
 

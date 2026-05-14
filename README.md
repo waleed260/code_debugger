@@ -1,24 +1,33 @@
-# Code Debugger — Multi-Agent AI Debugging & Infrastructure Management System
+# Code Debugger — Autonomous Multi-Language AI Debugging Platform
 
-**Version:** 0.2.0  
+**Version:** 2.0.0  
 **Author:** waleed260  
 **Python:** 3.12+  
 **License:** MIT  
 **Roadmap:** [PRD.md](PRD.md) — full product requirements and future architecture
 
-A multi-agent AI system built on the OpenAI Agents SDK that combines three debug agents (root cause analysis, fix generation, validation) with five infrastructure management agents (health monitoring, security auditing, performance optimization, cost management, incident response). Deployable as a Flask web app on Vercel or used via CLI.
+A production-grade autonomous AI debugging platform built on the OpenAI Agents SDK. Features **10 specialized debug agents**, an **execution sandbox** (multi-language), **autonomous repair loop**, **AST/CFG code intelligence**, **debugging RAG system**, and **5 infrastructure management agents**. Deployable as a FastAPI web app with websocket streaming or used via CLI.
 
 ---
 
 ## Table of Contents
 
-- [Architecture](#architecture)
-- [Debug Agents (3)](#debug-agents-3)
+- [V2 Architecture](#v2-architecture)
+- [10 Specialized Debug Agents](#10-specialized-debug-agents)
+- [V1 Agents (Legacy)](#v1-agents-legacy)
 - [Infrastructure Agents (5)](#infrastructure-agents-5)
+- [Autonomous Repair Loop](#autonomous-repair-loop)
+- [Execution Sandbox](#execution-sandbox)
+- [Code Intelligence Layer](#code-intelligence-layer)
+- [Debugging RAG System](#debugging-rag-system)
+- [Patch Engine](#patch-engine)
+- [Test Generator](#test-generator)
+- [Observability Stack](#observability-stack)
+- [FastAPI Web Server (V2)](#fastapi-web-server-v2)
 - [Fast Local Debugger](#fast-local-debugger)
 - [Function Tools](#function-tools)
 - [CLI Interface](#cli-interface)
-- [Web API (Flask)](#web-api-flask)
+- [Web API (V1 Flask)](#web-api-v1-flask)
 - [Web UI](#web-ui)
 - [Session Persistence](#session-persistence)
 - [Configuration](#configuration)
@@ -32,122 +41,439 @@ A multi-agent AI system built on the OpenAI Agents SDK that combines three debug
 
 ---
 
-## Architecture
+## V2 Architecture
 
 ```
-User Input (CLI / Web UI / API)
-        │
-        ▼
-┌──────────────────────────────────────┐
-│  Flask API (api/index.py)            │
-│  OR CLI (code_debugger_cli.py)       │
-└──────────────┬───────────────────────┘
-               │
-               ▼
-┌──────────────────────────────────────┐
-│  SyncDebuggingOrchestrator /          │
-│  DebuggingOrchestrator (async)        │
-│  OR InfrastructureOrchestrator        │
-└──────────────┬───────────────────────┘
-               │
-               ▼
-┌──────────────────────────────────────┐
-│  run_full_debugging_cycle()           │
-│  ┌─────────────────────────────┐     │
-│  │ Fast Local Debugger (sync)  │     │ ← No API calls, instant
-│  │ 20+ Python errors covered   │     │
-│  └─────────────────────────────┘     │
-│  OR                                  │
-│  ┌─────────────────────────────┐     │
-│  │ 1. DebugSleuth (RCA)        │     │
-│  │ 2. SolutionArchitect (Fix)  │     │ ← OpenAI Agents SDK + OpenRouter
-│  │ 3. ReliabilityEngineer (QA) │     │   (async pipeline)
-│  └─────────────────────────────┘     │
-└──────────────┬───────────────────────┘
-               │
-               ▼
-┌──────────────────────────────────────┐
-│  SessionManager (SQLite)             │
-│  Tables: sessions, agent_interactions │
-│  conversation_turns, agent_traces,   │
-│  bug_reports                         │
-└──────────────────────────────────────┘
+                ┌──────────────────────┐
+                │ FastAPI / CLI / WebUI │
+                └──────────┬───────────┘
+                           │
+                ┌──────────▼───────────┐
+                │ OrchestratorV2        │ ← AI-first primary pipeline
+                │ DebuggingOrchestrator │
+                └──────────┬───────────┘
+                           │
+        ┌──────────────────────────────────┐
+        │  Stage 1: Fast Enrichment        │
+        │  - Error type extraction         │
+        │  - RAG context retrieval         │
+        │  - Pattern detection             │
+        └──────────────┬───────────────────┘
+                       │
+        ┌──────────────▼───────────────────┐
+        │  Stage 2: Multi-Agent RCA         │
+        │  ┌───────────────────────────┐   │
+        │  │ StackTraceAgent           │   │ ← Parse traceback
+        │  │ DependencyAgent           │   │ ← Check imports/versions
+        │  │ RuntimeAgent              │   │ ← Analyze runtime state
+        │  │ DataFlowAgent             │   │ ← Trace variable corruption
+        │  │ FixGenerationAgent        │   │ ← Generate candidate fix
+        │  │ ValidationAgent           │   │ ← Run tests
+        │  │ RegressionAgent           │   │ ← Detect side effects
+        │  │ SecurityImpactAgent       │   │ ← Security audit
+        │  │ PerformanceImpactAgent    │   │ ← Performance check
+        │  │ RefactorAgent             │   │ ← Code quality
+        │  └───────────────────────────┘   │
+        └──────────────┬───────────────────┘
+                       │
+        ┌──────────────▼───────────────────┐
+        │  Stage 3: Execution Validation   │
+        │  - Docker sandbox (if available) │
+        │  - Multi-language runtime        │
+        │  - stdout/stderr capture         │
+        └──────────────┬───────────────────┘
+                       │
+        ┌──────────────▼───────────────────┐
+        │  Stage 4: Autonomous Repair Loop │
+        │  ┌───────────────────────────┐   │
+        │  │ Fix → Test → Refine × N  │   │ ← Iterative repair
+        │  │ Confidence scoring       │   │
+        │  │ Rollback support         │   │
+        │  └───────────────────────────┘   │
+        └──────────────┬───────────────────┘
+                       │
+        ┌──────────────▼───────────────────┐
+        │  Output                          │
+        │  - Root cause analysis           │
+        │  - Diff/patch                    │
+        │  - Validation report             │
+        │  - Security assessment           │
+        │  - Regression check              │
+        │  - Confidence score              │
+        └──────────────────────────────────┘
 ```
 
 ### Key Architecture Decisions
 
-- **Two orchestrator paths**: `SyncDebuggingOrchestrator` uses the fast local debugger (no API calls). `DebuggingOrchestrator` (async) runs the full 3-agent pipeline via OpenRouter.
+- **AI-first pipeline**: `DebuggingOrchestratorV2` is the primary path. The fast local debugger is only a fallback when the API is unreachable.
+- **Tiered execution**: Stage 1 (pattern detection) → Stage 2 (multi-agent RCA) → Stage 3 (sandbox validation) → Stage 4 (autonomous repair loop).
+- **10 specialized agents**: Replaced 3 generic agents (DebugSleuth, SolutionArchitect, ReliabilityEngineer) with targeted agents for traceback parsing, dependency analysis, runtime state, data flow, fix generation, validation, regression, security, performance, and refactoring.
 - **OpenAI Agents SDK** handles agent definitions, tool registration, and conversation loops.
 - **OpenRouter** serves as the LLM backend (supports Llama 3.3 70B, Gemini Flash, Qwen, GPT-3.5, and any OpenAI-compatible model).
-- **Flask API** is the web entry point, deployed serverless on Vercel.
+- **FastAPI** is the V2 web entry point with async-native endpoints and websocket streaming.
 - **SQLite** persists all sessions, interactions, traces, and bug reports.
 
 ---
 
-## Debug Agents (3)
+## 10 Specialized Debug Agents
 
-### 1. Debug Sleuth — Root Cause Analysis
+### 1. StackTraceAgent — Traceback Parsing
 
 | Property | Detail |
 |---|---|
-| **Role** | Forensic stack trace analysis |
-| **Model** | OpenRouter configurable (default: Llama 3.3 70B) |
+| **Role** | Precisely parse tracebacks and identify error type, location, call chain |
+| **Max Tokens** | 400 |
+| **Tool** | `extract_traceback_info(error_trace)` — extracts error type, message, failing file/line, full call chain |
+
+**Capabilities:**
+- Parse error type, message, and exact location from any traceback format
+- Identify the full call chain leading to the failure
+- Extract relevant code context around the failing line
+- Classify errors as Runtime / Logic / System / Resource
+
+### 2. DependencyAgent — Package & Version Conflict Detection
+
+| Property | Detail |
+|---|---|
+| **Role** | Detect missing packages, version conflicts, circular imports |
 | **Max Tokens** | 500 |
-| **Tools** | `list_directory_tool`, `read_code_file_tool`, `search_codebase_tool`, `run_shell_command_tool`, `analyze_python_code_tool` |
+| **Tools** | `check_import(module_name)`, `check_package_version(package_name)`, `find_import_chains(file_path)` |
 
 **Capabilities:**
-- Parses error type, message, and location from tracebacks
-- Reads code context around failing lines with `>>>` marker
-- Traces data flow to identify where problematic values originate
-- Supports multiple hypotheses with confidence levels (High/Medium/Low)
-- Outputs structured analysis with error type, location, root cause, and confidence
+- Detect missing or incompatible packages
+- Identify version conflicts
+- Analyze import chains for circular dependencies
+- Check for deprecated or insecure packages
 
-### 2. Solution Architect — Fix Generation
+### 3. RuntimeAgent — Runtime State Analysis
 
 | Property | Detail |
 |---|---|
-| **Role** | Software architect creating fixes |
-| **Model** | OpenRouter configurable |
-| **Max Tokens** | 600 |
-| **Tools** | Same 5 tools as Debug Sleuth |
+| **Role** | Analyze runtime state at failure point |
+| **Max Tokens** | 400 |
+| **Tools** | `analyze_error_pattern(error_trace)`, `check_runtime_environment()` |
 
 **Capabilities:**
-- Understands root cause and generates a single recommended fix
-- Applies SOLID principles and defensive programming
-- Includes a pytest snippet for verification
-- Considers backward compatibility and security-first design
-- Output includes corrected code, explanation, and test
+- Identify None propagation and null reference chains
+- Detect memory/resource exhaustion patterns
+- Identify threading/concurrency issues
+- Classify as NullPropagation / MemoryPressure / Concurrency / TypeMismatch / LogicError
 
-### 3. Reliability Engineer — Validation & Documentation
+### 4. DataFlowAgent — Variable Corruption Tracing
 
 | Property | Detail |
 |---|---|
-| **Role** | QA engineer validating fixes |
-| **Model** | OpenRouter configurable |
-| **Max Tokens** | 300 |
-| **Tools** | Same 5 tools as Debug Sleuth |
+| **Role** | Trace where problematic values originate in data flow |
+| **Max Tokens** | 500 |
+| **Tools** | `trace_variable_origin(file_path, var_name, line_number)`, `analyze_function_returns(file_path, function_name)` |
 
 **Capabilities:**
-- Checks if the fix actually solves the root cause
-- Identifies security issues and edge cases
-- Assesses test adequacy
-- Code smell detection (10+ patterns)
-- 8+ security checks
-- Quality scoring (0-100)
-- Outputs PASS/FAIL status with reasoning
+- Trace variable values through function calls using AST analysis
+- Identify where None/null values enter the data flow
+- Detect type mutations across assignment chains
+- Find uninitialized variables or stale values
 
-### Handoff Functions
+### 5. FixGenerationAgent — Candidate Fix Generation
 
-Three handoff functions exist (defined but not wired into the Agents SDK handoff mechanism):
-- `handoff_to_fixer(bug_analysis)` — Debug Sleuth → Solution Architect
-- `handoff_to_validator(fix_proposal)` — Solution Architect → Reliability Engineer
-- `handoff_back_to_architect(critique)` — Reliability Engineer → Solution Architect (for revision)
+| Property | Detail |
+|---|---|
+| **Role** | Generate targeted code fixes with multiple approaches |
+| **Max Tokens** | 800 |
+| **Tool** | `generate_safe_wrapper(error_type, code_context)` — returns safe wrapper for 10+ error types |
+
+**Capabilities:**
+- Generate minimal, correct fixes for identified bugs
+- Provide multiple approaches (Quick / Robust / Ideal)
+- Include test-driven validation for each fix
+- Output structured diffs for automatic application
+
+### 6. ValidationAgent — Real Test-Based Validation
+
+| Property | Detail |
+|---|---|
+| **Role** | Verify fixes by running tests and static analysis |
+| **Max Tokens** | 400 |
+| **Tools** | `validate_fix_against_original(code_before, code_after, error_trace)`, `check_code_quality(code)` |
+
+**Capabilities:**
+- Verify the fix resolves the original error
+- Run unit tests to validate correctness
+- Check edge cases and boundary conditions
+- Assess test coverage and quality
+
+### 7. RegressionAgent — Side Effect Detection
+
+| Property | Detail |
+|---|---|
+| **Role** | Detect side effects and regressions introduced by fixes |
+| **Max Tokens** | 400 |
+| **Tools** | `analyze_signature_changes(code_before, code_after)`, `detect_risky_patterns(code)` |
+
+**Capabilities:**
+- Identify if a fix introduces new failure modes
+- Check if downstream callers are affected by signature changes
+- Detect performance regressions from fix patterns
+- Flag risky fix patterns (bare except, global mutation, dynamic execution)
+
+### 8. SecurityImpactAgent — Vulnerability Assessment
+
+| Property | Detail |
+|---|---|
+| **Role** | Check if the bug or fix introduces security vulnerabilities |
+| **Max Tokens** | 400 |
+| **Tools** | `scan_security_issues(code)`, `check_security_score(issues_json)` |
+
+**Capabilities:**
+- Scan for SQL injection, command injection, XSS, insecure deserialization
+- Detect hardcoded secrets and credentials
+- Identify path traversal and unsafe file operations
+- Calculate security score (0-100) with CVSS-style risk assessment
+
+### 9. PerformanceImpactAgent — Performance Analysis
+
+| Property | Detail |
+|---|---|
+| **Role** | Analyze performance implications of bugs and fixes |
+| **Max Tokens** | 400 |
+| **Tools** | `analyze_performance_patterns(code)`, `estimate_fix_performance_impact(original_code, fixed_code)` |
+
+**Capabilities:**
+- Detect performance anti-patterns (nested loops, N+1 queries, string concatenation)
+- Assess fix performance impact (improves / neutral / degrades)
+- Estimate performance gain/loss percentages
+
+### 10. RefactorAgent — Code Quality Improvement
+
+| Property | Detail |
+|---|---|
+| **Role** | Improve code maintainability during and after fixes |
+| **Max Tokens** | 400 |
+| **Tools** | `detect_code_smells(code)`, `suggest_type_hints(code)` |
+
+**Capabilities:**
+- Detect code smells (long functions, excessive nesting, missing docstrings)
+- Suggest type hints and documentation improvements
+- Apply DRY, SOLID, and clean code principles
+- Score code quality and recommend cleanup
+
+### Database Debugging Agents
+
+5 additional agents for database-related debugging:
+
+| Agent | Purpose |
+|---|---|
+| `SQLQueryOptimizer` | Analyze slow queries, detect missing indexes, N+1 problems |
+| `MigrationValidator` | Check schema migration safety, detect breaking changes |
+| `SchemaAnalyzer` | Find missing PKs, FK constraints, data type issues |
+| `TransactionAgent` | Detect deadlocks, race conditions, isolation level issues |
+| `ORMMapperAgent` | Detect N+1 patterns, lazy loading issues, ORM/schema mismatches |
+
+---
+
+## Autonomous Repair Loop
+
+The orchestrator runs an iterative fix → test → refine cycle for autonomous repair:
+
+```
+Iteration 1: Generate fix → Validate → Check confidence
+Iteration 2: Refine based on previous results → Re-validate
+...
+Iteration N: Stop when confidence threshold met or max iterations reached
+```
+
+**Configuration:** `DebugSessionConfig.max_repair_iterations` (default: 5), `confidence_threshold` (default: 0.6)
+
+**Confidence scoring** factors:
+- Error keywords addressed in the fix
+- Defensive patterns used (try/except, type checks, guards)
+- Test generation and execution results
+- Security and regression analysis results
+
+---
+
+## Execution Sandbox
+
+Docker-based multi-language runtime execution for safe code validation.
+
+**Supported languages:**
+
+| Language | Docker Image | Timeout | Memory |
+|---|---|---|---|
+| Python | `python:3.12-slim` | 30s | 512MB |
+| JavaScript | `node:20-slim` | 30s | 512MB |
+| TypeScript | `node:20-slim` | 30s | 512MB |
+| Go | `golang:1.22` | 45s | 512MB |
+| Rust | `rust:1.78-slim` | 60s | 1GB |
+| Java | `openjdk:21-slim` | 45s | 1GB |
+| C++ | `gcc:14-bookworm` | 45s | 512MB |
+| Ruby | `ruby:3.3-slim` | 30s | 512MB |
+| PHP | `php:8.3-cli` | 30s | 512MB |
+| C# | `dotnet/sdk:8.0` | 60s | 1GB |
+| SQL | `postgres:16-alpine` | 30s | 512MB |
+
+**Sandbox features:**
+- Language auto-detection from code and filename
+- Docker container isolation with resource limits
+- Network disabled by default (opt-in)
+- File write support for multi-file projects
+- Test execution support (pytest, jest, go test, cargo test, etc.)
+- Falls back to local subprocess when Docker is unavailable
+
+**Key class:** `ExecutionSandbox(use_docker=True)`
+- `execute(code, language, files, timeout, test_command)` → `ExecutionResult`
+- `execute_test(code, test_code, language)` → `ExecutionResult`
+
+---
+
+## Code Intelligence Layer
+
+AST-based static analysis for deep code understanding beyond regex/LLM reasoning.
+
+**Class:** `ASTAnalyzer(repo_path)`
+
+**Capabilities:**
+- **Function analysis**: parameters, decorators, docstrings, return types, called functions
+- **Class analysis**: bases, methods, inheritance hierarchy
+- **Import analysis**: module names, aliases, import types
+- **Variable tracking**: definitions, assignments, type hints
+- **Call graph construction**: caller/callee relationships across files
+- **Data flow edges**: variable definition → usage chains
+- **Code quality scoring**: cyclomatic complexity, code smell detection
+- **Project-wide dependency graph**: module-level import relationships
+
+**Output structure:**
+```python
+{
+  "file": "path/to/file.py",
+  "loc": 150,
+  "complexity_score": 42,
+  "functions": [...],
+  "classes": [...],
+  "imports": [...],
+  "variables": [...],
+  "call_graph": [...],
+  "data_flow": [...],
+  "issues": [...],
+}
+```
+
+---
+
+## Debugging RAG System
+
+Retrieval-Augmented Debugging — retrieves relevant solutions from external sources to enrich debugging prompts.
+
+**Class:** `DebugRAG(cache_path)`
+
+**Sources:**
+- **Common patterns**: hardcoded fixes for IndexError, KeyError, TypeError, etc.
+- **StackOverflow patterns**: error-specific solution templates
+- **GitHub issues**: search queries for similar bugs
+- **Documentation**: links to Python docs, MDN, etc.
+- **CVE database**: known vulnerabilities in dependencies
+- **Changelogs**: breaking changes between versions
+- **Known patterns**: user-curated fix database (learns over time)
+
+**Methods:**
+- `retrieve(error_trace, language, code_context, top_k)` → `List[DebugSource]`
+- `enrich_prompt(error_trace, language, code_context)` → formatted context
+- `add_known_pattern(error_type, solution, source_type)` → persistent learning
+- `retrieve_github_issues(query)` / `retrieve_docs(module, error)` / `retrieve_cve(package)` / `retrieve_changelog(package, from_v, to_v)`
+
+---
+
+## Patch Engine
+
+Structured diff generation, application, and rollback with git integration.
+
+**Class:** `PatchEngine(repo_path)`
+
+**Key classes:**
+- `FilePatch(file_path, original_content, patched_content)` — represents a single file diff
+- `PatchSet(patches, summary, confidence_score)` — group of related patches
+- `PatchResult(success, applied_patches, failed_patches)` — result of applying patches
+
+**Methods:**
+- `create_patch(file_path, original, fixed)` → `FilePatch` with unified diff
+- `apply_patch(patch, dry_run)` → apply changes to filesystem
+- `apply_patch_set(patch_set, dry_run)` → apply batch of patches
+- `rollback(patch)` / `rollback_all(patches)` → revert changes
+- `create_diff_preview(patches)` → human-readable diff output
+- `git_commit(patches, message)` → commit to git
+- `git_create_branch_and_push(branch, patches, message)` → push to remote
+- `diff_text(original, fixed, filename)` → static unified diff utility
+
+---
+
+## Test Generator
+
+Automatically generates unit tests, integration tests, edge cases, and fuzz tests.
+
+**Class:** `TestGenerator()`
+
+**Methods:**
+- `generate_tests(source_code, file_path)` → `TestSuite` with unit tests for all functions and classes
+- `generate_regression_tests(bug_description, fix_code, original_code)` → regression test suite
+- `generate_edge_case_tests(func_name, args)` → edge case tests (None, empty, type mismatch)
+- `generate_fuzz_tests(func_name, args)` → randomized fuzz testing
+- `generate_security_tests(func_name, args)` → injection/malicious input tests
+- `render_suite(suite)` → formatted pytest test file output
+
+---
+
+## Observability Stack
+
+Tracks token usage, latency, success rates, agent metrics, and error distribution.
+
+**Class:** `ObservabilityTracker(db_path)`
+
+**Metrics collected:**
+- Per-agent duration, token count, success/failure, confidence score, retry count
+- Per-session total duration, total tokens, agents used, final status
+- Error type distribution across sessions
+
+**Reports:**
+- `get_report()` → `ObservabilityReport` with:
+  - Total sessions, success rate, average duration
+  - Per-agent stats (runs, avg duration, success rate, avg confidence, avg tokens)
+  - Error type distribution
+  - Recent sessions
+  - Top 10 most frequent errors
+- `get_timeline(session_id)` → chronological agent execution timeline
+
+---
+
+## FastAPI Web Server (V2)
+
+Migrated from Flask for native async, websocket streaming, auto OpenAPI docs, and Pydantic validation.
+
+**Run:**
+```bash
+uv run uvicorn api_v2.server:app --host 0.0.0.0 --port 8000 --reload
+```
+
+**Endpoints:**
+
+| Endpoint | Method | Description |
+|---|---|---|
+| `/` | GET | V2 Web UI |
+| `/health` | GET | Health check with timestamp |
+| `/debug` | POST | Run full V2 debugging pipeline |
+| `/metrics` | GET | Observability report |
+| `/agents` | GET | List all agents with roles |
+| `/ws/debug` | WebSocket | Streaming debug with real-time agent progress |
+
+**WebSocket streaming** sends events:
+- `{"type": "status", "stage": "...", "message": "..."}` — progress updates
+- `{"type": "agents", "agents": [...]}` — list of running agents
+- `{"type": "result", ...}` — final debugging result
+- `{"type": "error", "message": "..."}` — error messages
 
 ---
 
 ## Fast Local Debugger
 
-A built-in offline fallback that requires **no API calls**. It contains a hardcoded dictionary of 20+ common Python error types. When an error trace is submitted, it extracts the error type using regex and returns a pre-written explanation, safe wrapper function, and test snippet.
+A built-in offline fallback that requires **no API calls**. It is only used when the V2 AI pipeline is unavailable (API key missing, network error, etc.). It contains a hardcoded dictionary of 20+ common Python error types. When an error trace is submitted, it extracts the error type using regex and returns a pre-written explanation, safe wrapper function, and test snippet.
 
 **Covered Error Types (20+):**
 
@@ -564,8 +890,10 @@ These enable Claude to interact with the project's GitHub repository and perform
 ```
 code_debugger/
 ├── api/
-│   ├── index.py                  # Flask API server (main HTTP entry)
+│   ├── index.py                  # Flask API server (V1, legacy)
 │   └── html_content.py           # Inline HTML/CSS/JS for web UIs
+├── api_v2/
+│   └── server.py                 # FastAPI server (V2, async + websockets)
 ├── public/
 │   ├── index.html                # Static debugger web UI
 │   └── infrastructure.html       # Static infrastructure management UI
@@ -573,17 +901,39 @@ code_debugger/
 │   └── code_debugger/
 │       ├── __init__.py           # Package init, public API exports
 │       ├── __main__.py           # `python -m code_debugger` entry
-│       ├── agents.py             # 3 debug agents + fast local debugger + orchestrators
-│       ├── tools.py              # All function tools (debug + infra shared)
+│       ├── v1_agents.py          # V1 agents (legacy, backward compat)
+│       ├── tools.py              # All function tools
 │       ├── infra_agents.py       # 5 infrastructure agents + their tools
 │       ├── infra_orchestrator.py # Orchestrator for infrastructure agents
 │       ├── main.py               # CLI entry points and sample sessions
 │       ├── session_manager.py    # SQLite session management
 │       ├── database.py           # Simpler SQLite module (legacy/unused)
-│       └── orchestrator.py       # Legacy re-export for backward compat
+│       ├── orchestrator.py       # Legacy re-export for backward compat
+│       ├── orchestrator_v2.py    # V2 orchestrator (AI-first, repair loop)
+│       ├── sandbox.py            # Execution sandbox (Docker, multi-language)
+│       ├── code_intelligence.py  # AST/CFG analysis layer
+│       ├── patch_engine.py       # Diff/patch generation and application
+│       ├── rag.py                # Retrieval-Augmented Debugging system
+│       ├── test_generator.py     # Automatic test generation
+│       ├── observability.py      # Metrics and observability tracking
+│       └── agents/               # 10 specialized debug agents
+│           ├── __init__.py
+│           ├── stack_trace_agent.py
+│           ├── dependency_agent.py
+│           ├── runtime_agent.py
+│           ├── data_flow_agent.py
+│           ├── fix_generation_agent.py
+│           ├── validation_agent.py
+│           ├── regression_agent.py
+│           ├── security_impact_agent.py
+│           ├── performance_impact_agent.py
+│           ├── refactor_agent.py
+│           └── db_debug_agents.py
 ├── code_debugger_cli.py          # CLI interface script
+├── example_v2.py                 # V2 pipeline example
 ├── pyproject.toml                # Project metadata and dependencies
-├── requirements.txt              # Pip dependencies (mirrors pyproject.toml)
+├── requirements.txt              # Pip dependencies
+├── PRD.md                        # Product Requirements Document
 ├── vercel.json                   # Vercel serverless deployment config
 ├── .env.example                  # Environment variable template
 ├── .gitignore                    # Git ignore rules
@@ -594,8 +944,11 @@ code_debugger/
 ├── .claude/
 │   └── settings.local.json       # Claude permissions config
 ├── .vercel/                      # Vercel project metadata (auto-generated)
-├── debug_sessions.db             # SQLite database (runtime, gitignored)
-├── test_agents.py                # Debug agent tests
+├── debug_sessions_v2.db          # V2 SQLite database (runtime, gitignored)
+├── rag_cache.db                  # RAG cache database (runtime, gitignored)
+├── observability.db              # Observability database (runtime, gitignored)
+├── test_v2_pipeline.py           # V2 pipeline tests (44 tests)
+├── test_agents.py                # V1 debug agent tests
 ├── test_fix.py                   # Basic init test
 ├── test_infrastructure.py        # Infrastructure agent tests
 ├── test_openai_agents.py         # SDK integration tests
@@ -609,60 +962,51 @@ code_debugger/
 
 ## Roadmap
 
-For the complete vision, future architecture, and phased development plan, see **[PRD.md](PRD.md)**. Key priorities:
+All Phase 1 and Phase 2 items from **[PRD.md](PRD.md)** are now **implemented**:
 
-1. **Immediate**: Wire AI pipeline as primary path, add execution sandbox, add autonomous retry loop
-2. **Mid-term**: Multi-language support, AST/CFG analysis, debugging RAG, repository graph
-3. **Advanced**: Self-learning memory, distributed orchestration, auto PR generation, IDE integrations
+- ✅ AI pipeline as primary path (V2 orchestrator)
+- ✅ Execution sandbox (Docker-based, 11 languages)
+- ✅ Autonomous retry loop (iterative fix → test → refine)
+- ✅ Real test validation (test generation + execution)
+- ✅ Diff/patch system (unified diff + git integration)
+- ✅ 10 specialized agents (replaced 3 generic agents)
+- ✅ AST/CFG analysis (code intelligence layer)
+- ✅ Debugging RAG system (semantic retrieval)
+- ✅ Observability stack (metrics, tracking, reporting)
+- ✅ FastAPI + websocket streaming (migrated from Flask)
+
+**Next priorities:**
+- Repository knowledge graph (Neo4j + graph embeddings)
+- IDE integrations (VSCode extension, JetBrains plugin)
+- PR automation (auto-fix GitHub PRs)
+- Self-learning memory system
 
 ---
 
 ## Known Limitations & Weaknesses
 
-### Critical Issues
+### Known Issues
 
-1. **Sync orchestrator bypasses AI pipeline** — `SyncDebuggingOrchestrator.run_full_debugging_cycle()` calls the fast local debugger instead of running the actual 3-agent AI workflow via OpenRouter. The CLI and Web API always use the sync path, so they never actually leverage the multi-agent AI pipeline.
+1. **API key in .env is NOT gitignored** — The `.env` file containing `OPENROUTER_API_KEY` is not listed in `.gitignore`, creating a security risk of committing secrets.
 
-2. **API key in .env is NOT gitignored** — The `.env` file containing `OPENROUTER_API_KEY` is not listed in `.gitignore`, creating a security risk of committing secrets.
+2. **No authentication/authorization** — The Flask/FastAPI APIs have no auth middleware, making them publicly accessible if deployed.
 
-3. **No authentication/authorization** — The Flask API has no auth middleware, making it publicly accessible if deployed.
+3. **Ephemeral storage on Vercel** — The `/tmp/debug_sessions.db` path is serverless-ephemeral; data is lost between cold starts.
 
-4. **README was empty** — This file was originally empty; now populated with this comprehensive documentation.
+4. **Two database modules** — `database.py` (simpler, 3 tables) and `session_manager.py` (full-featured) coexist. Only `session_manager.py` is used; `database.py` is dead code.
 
-### Pipeline & Agent Issues
+5. **Security tools are limited** — Port scanner checks only 15 ports; SSL checker has no certificate chain validation; log analysis is simple regex matching.
 
-5. **Handoff functions defined but unused** — `handoff_to_fixer`, `handoff_to_validator`, and `handoff_back_to_architect` exist as simple string-returning functions but are never wired into the Agents SDK's handoff mechanism.
+6. **Cost Manager doesn't connect to cloud billing APIs** — It analyzes local resource usage but has no integration with AWS/Azure/GCP billing APIs.
 
-6. **No error recovery in agent pipeline** — If an agent call fails (e.g., OpenRouter rate limit), there is no retry logic or graceful degradation.
+7. **No type hints for complex dict returns** — Some tool return types use `Dict`/`Any` without specific type definitions.
 
-7. **Model string disconnect** — `DebuggingOrchestrator.__init__` defaults model to `"gpt-4o"` as a string, but the actual agents use `OPENROUTER_MODEL` from environment variables.
+8. **Commented-out imports** — Several files contain commented-out imports (e.g., `# from datetime import datetime` in `session_manager.py` and `main.py`).
 
-8. **No caching** — Every agent run makes fresh API calls; no response caching for repeated error patterns.
+9. **Model string disconnect** — `DebuggingOrchestrator.__init__` defaults model to `"gpt-4o"` as a string, but the actual agents use `OPENROUTER_MODEL` from environment variables.
 
-### Database Issues
+10. **Fast debugger dictionary incomplete** — Covers 20+ error types but misses compound/custom exceptions like `json.JSONDecodeError`.
 
-9. **Two database modules** — `database.py` (simpler, 3 tables) and `session_manager.py` (full-featured, 5+ tables) coexist. Only `session_manager.py` is used; `database.py` is dead code.
+11. **`run_async()` helper is fragile** — The helper in `v1_agents.py` has complex event loop handling that could fail in threaded environments.
 
-10. **Ephemeral storage on Vercel** — The `/tmp/debug_sessions.db` path is serverless-ephemeral; data is lost between cold starts.
-
-### Testing & Coverage
-
-11. **No end-to-end test for the AI pipeline** — Tests import agents but the sync orchestrator uses the local fallback, so the OpenRouter-based pipeline is never actually tested end-to-end.
-
-12. **Fast debugger dictionary incomplete** — While it covers 20+ error types, many edge cases and compound errors are not handled (e.g., `json.JSONDecodeError`, custom exceptions).
-
-### Infrastructure Agents
-
-13. **Same model for all 5 infra agents** — No differentiation in model sizing for different complexity tasks.
-
-14. **Security tools are limited** — Port scanner checks only 15 ports; SSL checker has no certificate chain validation; log analysis is simple regex matching.
-
-15. **Cost Manager doesn't connect to cloud billing APIs** — It analyzes local resource usage but has no integration with AWS/Azure/GCP billing APIs.
-
-### Code Quality
-
-16. **`run_async()` helper is fragile** — The helper in `agents.py` has complex event loop handling logic that could fail in edge cases, especially in threaded environments.
-
-17. **Commented-out imports** — Several files contain commented-out imports (e.g., `# from datetime import datetime` in `session_manager.py` and `main.py`).
-
-18. **No type hints for complex dict returns** — Most tool return types use `Dict`/`Any` without specific type definitions.
+12. **No caching for LLM responses** — Every agent run makes fresh API calls; no caching for repeated error patterns.
