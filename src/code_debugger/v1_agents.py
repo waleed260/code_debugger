@@ -555,52 +555,171 @@ def _is_likely_traceback(text: str) -> bool:
 
 
 def _analyze_source_code(code: str) -> Dict[str, Any]:
-    """Analyze arbitrary source code for potential bugs using AST."""
+    """Analyze source code for bugs and generate fixes using AST."""
     import ast as ast_module
+    import textwrap
+
     issues = []
+    fixes = {}
+    defined_names = set()
+    used_names = set()
+    function_bodies = {}
 
     try:
         tree = ast_module.parse(code)
     except SyntaxError as e:
+        fix = _syntax_error_fix(code, e)
         return {
             'issues': [{'type': 'SyntaxError', 'line': e.lineno or 0, 'message': str(e)}],
             'has_errors': True,
-            'summary': f'Syntax error in code: {e}',
+            'summary': f'Syntax error: {e}',
+            'fixed_code': fix,
+            'has_fix': True,
         }
 
+    # First pass: collect defined names (including function params)
     for node in ast_module.walk(tree):
         if isinstance(node, ast_module.FunctionDef):
+            defined_names.add(node.name)
+            function_bodies[node.name] = node
+            for arg in node.args.args:
+                defined_names.add(arg.arg)
+            if node.args.vararg:
+                defined_names.add(node.args.vararg.arg)
+            if node.args.kwarg:
+                defined_names.add(node.args.kwarg.arg)
+            for arg in node.args.kwonlyargs:
+                defined_names.add(arg.arg)
+            for arg in node.args.posonlyargs:
+                defined_names.add(arg.arg)
+            for default in node.args.defaults:
+                if isinstance(default, ast_module.Name):
+                    defined_names.add(default.id)
+        elif isinstance(node, ast_module.ClassDef):
+            defined_names.add(node.name)
+        elif isinstance(node, ast_module.Assign):
+            for t in node.targets:
+                if isinstance(t, ast_module.Name):
+                    defined_names.add(t.id)
+                elif isinstance(t, (ast_module.List, ast_module.Tuple)):
+                    for elt in t.elts:
+                        if isinstance(elt, ast_module.Name):
+                            defined_names.add(elt.id)
+        elif isinstance(node, ast_module.Import):
+            for alias in node.names:
+                defined_names.add(alias.asname or alias.name)
+        elif isinstance(node, ast_module.ImportFrom):
+            for alias in node.names:
+                defined_names.add(alias.asname or alias.name)
+        elif isinstance(node, (ast_module.For, ast_module.AsyncFor)):
+            if isinstance(node.target, ast_module.Name):
+                defined_names.add(node.target.id)
+            elif isinstance(node.target, (ast_module.List, ast_module.Tuple)):
+                for elt in node.target.elts:
+                    if isinstance(elt, ast_module.Name):
+                        defined_names.add(elt.id)
+        elif isinstance(node, ast_module.comprehension):
+            if isinstance(node.target, ast_module.Name):
+                defined_names.add(node.target.id)
+        elif isinstance(node, ast_module.ExceptHandler) and node.name:
+            defined_names.add(node.name)
+        elif isinstance(node, ast_module.With) or isinstance(node, ast_module.AsyncWith):
+            for item in node.items:
+                if item.optional_vars and isinstance(item.optional_vars, ast_module.Name):
+                    defined_names.add(item.optional_vars.id)
+
+    # Second pass: find bugs
+    for node in ast_module.walk(tree):
+        if isinstance(node, ast_module.Name) and isinstance(node.ctx, ast_module.Load):
+            used_names.add(node.id)
+            builtins = {'True', 'False', 'None', 'str', 'int', 'float', 'list', 'dict', 'set',
+                        'tuple', 'bool', 'len', 'range', 'print', 'type', 'isinstance', 'hasattr',
+                        'getattr', 'setattr', 'open', 'super', 'property', 'classmethod',
+                        'staticmethod', 'object', 'Exception', 'BaseException', 'ValueError',
+                        'TypeError', 'KeyError', 'IndexError', 'AttributeError',
+                        'ZeroDivisionError', 'FileNotFoundError', 'ImportError',
+                        'RuntimeError', 'NameError', 'OSError', '__name__', '__file__',
+                        '__init__', '__str__', '__repr__', '__call__', '__getitem__',
+                        '__setitem__', '__delitem__', '__contains__', '__iter__',
+                        '__next__', '__len__', '__enter__', '__exit__', 'self', 'cls',
+                        'Any', 'Dict', 'List', 'Optional', 'Tuple', 'Set', 'Callable',
+                        'Union', 'Type', 'Iterable', 'Iterator', 'Generator', 'await',
+                        'async', 'NotImplemented', 'Ellipsis', 're', 'json', 'os', 'sys',
+                        'math', 'datetime', 'time', 'pathlib', 'Path', 'typing',
+                        'Dict', 'List', 'Any', 'Optional', 'Tuple', 'Set',
+                        'Callable', 'Union', 'Type', 'Iterable', 'Iterator',
+                        'Generator', 'Pattern', 'Match', 'defaultdict', 'OrderedDict',
+                        'Counter', 'deque', 'namedtuple', 'ChainMap', 'UserDict',
+                        'UserList', 'UserString', 'Enum', 'IntEnum', 'Flag', 'auto',
+                        'dataclass', 'field', 'asdict', 'astuple', 'dataclasses',
+                        'functools', 'itertools', 'collections', 'copy', 'deepcopy',
+                        'random', 'statistics', 'hashlib', 'base64', 'binascii',
+                        'io', 'StringIO', 'BytesIO', 'tempfile', 'shutil', 'glob',
+                        'fnmatch', 'linecache', 'pickle', 'shelve', 'marshal',
+                        'sqlite3', 'csv', 'configparser', 'argparse', 'logging',
+                        'warnings', 'traceback', 'inspect', 'pprint', 'textwrap',
+                        'string', 'struct', 'enum', 'numbers', 'decimal', 'fractions',
+                        'uuid', 'socket', 'ssl', 'http', 'urllib', 'email', 'json',
+                        'xml', 'html', 'webbrowser'}  # fmt: skip
+            if node.id not in builtins and node.id not in defined_names and node.id not in used_names:
+                pass  # may be defined later
+
+            undefined = node.id not in builtins and node.id not in defined_names
+            if undefined and node.id[0].islower() and node.id != 'self' and node.id != 'cls':
+                issues.append({
+                    'type': 'UndefinedVariable',
+                    'line': node.lineno,
+                    'message': f'Variable "{node.id}" might be undefined or out of scope',
+                    'severity': 'error',
+                    'fix': f'# Define "{node.id}" before use or check scope',
+                })
+
+        elif isinstance(node, ast_module.FunctionDef):
             if len(node.args.args) > 6:
                 issues.append({
-                    'type': 'TooManyArguments',
+                    'type': 'TooManyArgs',
                     'line': node.lineno,
-                    'message': f'Function "{node.name}" has {len(node.args.args)} parameters (max 6 recommended)',
+                    'message': f'Function "{node.name}" has {len(node.args.args)} parameters',
                     'severity': 'warning',
-                })
-            if not ast_module.get_docstring(node):
-                issues.append({
-                    'type': 'MissingDocstring',
-                    'line': node.lineno,
-                    'message': f'Function "{node.name}" is missing a docstring',
-                    'severity': 'style',
+                    'fix': f'# Reduce parameters or use **kwargs for "{node.name}"',
                 })
 
-        elif isinstance(node, ast_module.ClassDef):
-            if not ast_module.get_docstring(node):
+            if node.name == '__init__':
+                for stmt in node.body:
+                    if isinstance(stmt, ast_module.Assign):
+                        for t in stmt.targets:
+                            if isinstance(t, ast_module.Attribute) and isinstance(t.value, ast_module.Name) and t.value.id == 'self':
+                                attr_name = t.attr
+                                if attr_name not in [s.attr for s in ast_module.walk(tree) if isinstance(s, ast_module.Attribute) and isinstance(s.value, ast_module.Name) and s.value.id == 'self']:
+                                    pass
+
+        elif isinstance(node, ast_module.BinOp) and isinstance(node.op, ast_module.Div):
+            if isinstance(node.right, ast_module.Constant) and node.right.value == 0:
                 issues.append({
-                    'type': 'MissingDocstring',
+                    'type': 'DivisionByZero',
                     'line': node.lineno,
-                    'message': f'Class "{node.name}" is missing a docstring',
-                    'severity': 'style',
+                    'message': 'Division by zero literal detected',
+                    'severity': 'error',
+                    'fix': '# Add zero check before division',
                 })
 
-        elif isinstance(node, ast_module.Raise):
-            issues.append({
-                'type': 'RaisesException',
-                'line': node.lineno,
-                'message': f'Code raises an exception at line {node.lineno}',
-                'severity': 'info',
-            })
+        elif isinstance(node, ast_module.Compare):
+            for op, right in zip(node.ops, node.comparators):
+                if isinstance(op, (ast_module.Is, ast_module.IsNot)):
+                    if isinstance(node.left, ast_module.Constant) and node.left.value is None:
+                        pass
+                    elif isinstance(right, ast_module.Constant) and right.value is None:
+                        if not isinstance(node.left, ast_module.Call):
+                            pass
+                elif isinstance(op, ast_module.Eq):
+                    if isinstance(right, ast_module.Constant) and right.value is None:
+                        issues.append({
+                            'type': 'CompareToNone',
+                            'line': node.lineno,
+                            'message': 'Use "is None" instead of "== None"',
+                            'severity': 'style',
+                            'fix': node.left.id + ' is None' if isinstance(node.left, ast_module.Name) else 'Use is None',
+                        })
 
         elif isinstance(node, ast_module.Try):
             has_bare_except = any(
@@ -611,47 +730,131 @@ def _analyze_source_code(code: str) -> Dict[str, Any]:
                 issues.append({
                     'type': 'BareExcept',
                     'line': node.lineno,
-                    'message': 'Bare except: clause catches ALL exceptions, may hide bugs',
+                    'message': 'Bare except: catches ALL exceptions, may hide bugs',
                     'severity': 'warning',
+                    'fix': 'except SpecificException:  # Replace with specific exception',
                 })
 
-    passes = 0
-    fails = 0
-    warnings = 0
-    for issue in issues:
-        if issue['severity'] == 'warning':
-            warnings += 1
-        elif issue['type'] == 'RaisesException':
-            passes += 1
-        else:
-            fails += 1
+        elif isinstance(node, ast_module.Return):
+            parent = _find_parent_function(tree, node)
+            if parent:
+                func_body = function_bodies.get(parent)
+                has_return_val = any(
+                    isinstance(n, ast_module.Return) and n.value is not None
+                    for n in ast_module.walk(func_body) if isinstance(n, ast_module.Return)
+                ) if func_body else True
+                if not has_return_val and node.value is not None:
+                    pass
 
-    summary_lines = []
-    summary_lines.append(f'## Code Analysis Report\n')
-    summary_lines.append(f'**File analyzed**: source code ({len(code.splitlines())} lines)')
-    summary_lines.append(f'**Issues found**: {len(issues)}\n')
+    # Generate fixed code
+    lines = code.splitlines()
+    has_fix = False
+    fixed_lines = list(lines)
+
+    for issue in issues:
+        if issue['type'] == 'CompareToNone':
+            line_idx = issue['line'] - 1
+            if 0 <= line_idx < len(lines):
+                original = lines[line_idx]
+                fixed = original.replace('== None', 'is None').replace('!= None', 'is not None')
+                if fixed != original:
+                    fixed_lines[line_idx] = fixed
+                    has_fix = True
+
+    fixed_code = '\n'.join(fixed_lines)
+    if fixed_code == code:
+        fixed_code = ''
+        has_fix = False
+
+    # Build summary
+    error_count = sum(1 for i in issues if i['severity'] == 'error')
+    warning_count = sum(1 for i in issues if i['severity'] == 'warning')
+    style_count = sum(1 for i in issues if i['severity'] == 'style')
+    total = len(issues)
+
+    lines_list = [
+        '## Code Analysis & Fix Report\n',
+        f'**Analyzed**: {len(lines)} lines  **Issues**: {total} ({error_count} errors, {warning_count} warnings, {style_count} style)\n',
+    ]
 
     if issues:
-        summary_lines.append('### Issues Detected\n')
+        lines_list.append('### Issues Detected\n')
         for issue in issues:
-            level_icon = '🔴' if issue['severity'] == 'error' else '🟡' if issue['severity'] == 'warning' else '🔵'
-            summary_lines.append(f'{level_icon} **L{issue["line"]}**: {issue["message"]}')
+            icon = '🔴' if issue['severity'] == 'error' else '🟡' if issue['severity'] == 'warning' else '🔵'
+            fix_hint = issue.get('fix', '')
+            fix_part = f' → {fix_hint}' if fix_hint else ''
+            lines_list.append(f'{icon} **L{issue["line"]}**: {issue["message"]}{fix_part}')
+        lines_list.append('')
+
+    if has_fix:
+        lines_list.append('\n### Fixed Code\n')
+        lines_list.append('```diff')
+        for i, (old, new) in enumerate(zip(lines, fixed_lines)):
+            line_num = f'{i+1:3d}'
+            if old != new:
+                lines_list.append(f'-{line_num}| {old}')
+                lines_list.append(f'+{line_num}| {new}')
+            else:
+                lines_list.append(f' {line_num}| {old}')
+        lines_list.append('```\n')
+        lines_list.append('\n---\n')
+        lines_list.append(fixed_code)
+        lines_list.append('\n---\n')
     else:
-        summary_lines.append('No issues detected. Code looks clean.\n')
+        if not issues:
+            lines_list.append('✅ No issues found. Code looks clean.\n')
+            lines_list.append('\n```python\n')
+            lines_list.append(code)
+            lines_list.append('\n```\n')
 
-    summary_lines.append('\n### Recommendations\n')
-    if warnings > 0:
-        summary_lines.append(f'- Fix {warnings} warning(s) for better code quality')
-    summary_lines.append('- Add docstrings to functions/classes missing them')
-    summary_lines.append('- Keep function parameters under 6 for readability')
-
-    has_errors = fails > 0
+    if issues:
+        lines_list.append('\n### Recommendations\n')
+        if error_count > 0:
+            lines_list.append('- 🔴 Fix errors before deploying')
+        if warning_count > 0:
+            lines_list.append('- 🟡 Address warnings for better reliability')
+        if style_count > 0:
+            lines_list.append('- 🔵 Apply style suggestions for readability')
 
     return {
         'issues': issues,
-        'has_errors': has_errors,
-        'summary': '\n'.join(summary_lines),
+        'has_errors': error_count > 0,
+        'has_fix': has_fix,
+        'fixed_code': fixed_code,
+        'summary': '\n'.join(lines_list),
     }
+
+
+def _find_parent_function(tree, target_node):
+    """Find the name of the function containing a given node."""
+    import ast
+    for node in ast.walk(tree):
+        if isinstance(node, ast.FunctionDef):
+            for child in ast.walk(node):
+                if child is target_node:
+                    return node.name
+    return None
+
+
+def _syntax_error_fix(code: str, error: SyntaxError) -> str:
+    """Attempt to fix common syntax errors."""
+    lines = code.splitlines()
+    if error.lineno and 0 < error.lineno <= len(lines):
+        line = lines[error.lineno - 1]
+        msg = str(error)
+        if 'unterminated string' in msg or 'EOL while scanning' in msg:
+            lines[error.lineno - 1] = line + '"' if not line.rstrip().endswith('"') else line
+            return '\n'.join(lines)
+        if 'unexpected indent' in msg:
+            lines[error.lineno - 1] = line.lstrip()
+            return '\n'.join(lines)
+        if 'invalid syntax' in msg and ':' not in line.rstrip():
+            if line.rstrip().endswith(('\\', '(', '[')):
+                pass
+            elif any(line.lstrip().startswith(kw) for kw in ['def ', 'class ', 'if ', 'elif ', 'else', 'for ', 'while ', 'try:', 'except', 'finally:', 'with ', 'async ']):
+                lines[error.lineno - 1] = line.rstrip() + ':'
+                return '\n'.join(lines)
+    return f'# Syntax error at line {error.lineno}: {error.msg}'
 
 
 def run_fast_debug(client: OpenAI, error_context: Dict[str, Any]) -> Dict[str, Any]:
